@@ -61,8 +61,8 @@ export async function getToolBySlug(slug: string): Promise<Tool | null> {
 export async function getPublishedToolSlugs(): Promise<{ slug: string }[]> {
   if (USE_MOCK) return MOCK_TOOLS.map((t) => ({ slug: t.slug }))
 
-  const { createServerSupabaseClient } = await import('@/lib/supabase-server')
-  const supabase = createServerSupabaseClient()
+  const { createStaticSupabaseClient } = await import('@/lib/supabase-server')
+  const supabase = createStaticSupabaseClient()
   const { data } = await supabase.from('tools').select('slug').eq('status', 'published')
   return data ?? []
 }

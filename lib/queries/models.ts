@@ -59,8 +59,8 @@ export async function getModelBySlug(slug: string): Promise<Model | null> {
 export async function getPublishedModelSlugs(): Promise<{ slug: string }[]> {
   if (USE_MOCK) return MOCK_MODELS.map((m) => ({ slug: m.slug }))
 
-  const { createServerSupabaseClient } = await import('@/lib/supabase-server')
-  const supabase = createServerSupabaseClient()
+  const { createStaticSupabaseClient } = await import('@/lib/supabase-server')
+  const supabase = createStaticSupabaseClient()
   const { data } = await supabase.from('models').select('slug').eq('status', 'published')
   return data ?? []
 }
