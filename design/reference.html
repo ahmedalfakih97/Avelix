@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&amp;family=JetBrains+Mono:wght@500;700&amp;family=Plus+Jakarta+Sans:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#b8c6ed",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#384667",
+                        "on-primary-fixed-variant": "#005143",
+                        "error-container": "#93000a",
+                        "secondary-container": "#dc9100",
+                        "tertiary-container": "#adbce3",
+                        "inverse-primary": "#006b5a",
+                        "surface-tint": "#27dfbe",
+                        "surface-container": "#1a202a",
+                        "secondary-fixed-dim": "#ffb955",
+                        "on-primary": "#00382e",
+                        "primary": "#46f1cf",
+                        "surface": "#0e131e",
+                        "primary-container": "#00d4b4",
+                        "data-dim": "#4A5568",
+                        "on-secondary-container": "#4f3100",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#2f3540",
+                        "electromagnetic-ink": "#050A14",
+                        "secondary": "#ffb955",
+                        "surface-container-low": "#161c26",
+                        "signal-orange": "#F5A623",
+                        "surface-variant": "#2f3540",
+                        "surface-container-lowest": "#080e18",
+                        "secondary-fixed": "#ffddb4",
+                        "background": "#0e131e",
+                        "on-primary-container": "#005648",
+                        "on-surface-variant": "#bacac4",
+                        "outline-variant": "#3b4a45",
+                        "on-tertiary-container": "#3d4b6c",
+                        "on-secondary-fixed": "#291800",
+                        "tertiary-fixed": "#d9e2ff",
+                        "outline": "#84948f",
+                        "on-secondary-fixed-variant": "#633f00",
+                        "on-error": "#690005",
+                        "primary-fixed-dim": "#27dfbe",
+                        "surface-container-high": "#242a35",
+                        "inverse-on-surface": "#2b313c",
+                        "on-surface": "#dde2f1",
+                        "pure-white": "#FFFFFF",
+                        "electric-teal": "#00D4B4",
+                        "on-tertiary-fixed": "#0a1b39",
+                        "tertiary": "#c9d8ff",
+                        "primary-fixed": "#55fcda",
+                        "on-background": "#dde2f1",
+                        "surface-bright": "#343945",
+                        "surface-dim": "#0e131e",
+                        "terminal-border": "#162544",
+                        "on-primary-fixed": "#00201a",
+                        "on-tertiary": "#21304f",
+                        "inverse-surface": "#dde2f1",
+                        "on-secondary": "#452b00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "0px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "panel-gap": "1px",
+                        "unit": "4px",
+                        "margin-desktop": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Syne"],
+                        "label-caps": ["JetBrains Mono"],
+                        "data-mono": ["JetBrains Mono"],
+                        "display-lg": ["Syne"],
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                        "data-mono": ["13px", {"lineHeight": "1.4", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: #050A14; color: #dde2f1; }
+        .grid-bg {
+            background-image: linear-gradient(#162544 1px, transparent 1px), linear-gradient(90deg, #162544 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .signal-scan {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background-color: #00D4B4;
+            box-shadow: 0 0 8px #00D4B4;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 2px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #050A14; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #162544; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-lg antialiased overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-md border-b border-terminal-border flex justify-between items-center h-16 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="terminal">terminal</span>
+<span class="text-headline-md font-headline-md text-primary tracking-tighter uppercase">AVELIX</span>
+</div>
+<button class="bg-transparent border border-electric-teal text-electric-teal font-label-caps text-[10px] px-3 py-1.5 hover:bg-electric-teal/10 transition-all">
+            GET STARTED
+        </button>
+</header>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="relative min-h-[618px] flex flex-col justify-center px-4 py-20 overflow-hidden grid-bg">
+<div class="signal-scan"></div>
+<div class="z-10">
+<div class="inline-block border border-primary px-2 py-0.5 mb-6">
+<span class="font-data-mono text-label-caps text-primary uppercase">Signal_Layer_v.1.04</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-6 uppercase leading-none">
+                    Navigate the <span class="text-electric-teal">AI Universe.</span>
+</h1>
+<p class="font-body-lg text-on-surface-variant max-w-sm mb-10">
+                    Surgical precision for high-velocity signal discovery. Decoding the invisible frequencies of artificial intelligence.
+                </p>
+<div class="flex flex-col gap-4">
+<button class="w-full bg-electric-teal text-electromagnetic-ink font-label-caps py-4 px-6 text-center text-sm font-bold uppercase hover:bg-white transition-colors">
+                        Initiate Protocol
+                    </button>
+<button class="w-full bg-transparent border border-terminal-border text-on-surface font-label-caps py-4 px-6 text-center text-sm uppercase hover:border-primary transition-all">
+                        View Documentation
+                    </button>
+</div>
+</div>
+<div class="absolute right-[-20%] top-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
+<span class="material-symbols-outlined text-[300px] text-primary" style="font-variation-settings: 'FILL' 0;">radar</span>
+</div>
+</section>
+<!-- Problem Statement -->
+<section class="border-t border-terminal-border bg-electromagnetic-ink px-4 py-12">
+<div class="flex flex-col gap-8">
+<div class="border-l-2 border-primary pl-4 py-2">
+<span class="font-data-mono text-label-caps text-data-dim uppercase block mb-2">01 // Friction</span>
+<h3 class="font-headline-md text-on-surface mb-2 uppercase">Information Noise</h3>
+<p class="font-body-sm text-on-surface-variant">Standard discovery tools fail to filter the massive influx of synthetic data and AI-generated noise.</p>
+</div>
+<div class="border-l-2 border-terminal-border pl-4 py-2 hover:border-primary transition-colors">
+<span class="font-data-mono text-label-caps text-data-dim uppercase block mb-2">02 // Latency</span>
+<h3 class="font-headline-md text-on-surface mb-2 uppercase">Knowledge Gaps</h3>
+<p class="font-body-sm text-on-surface-variant">The speed of AI evolution exceeds human cognitive processing without an optimized signal layer.</p>
+</div>
+<div class="border-l-2 border-terminal-border pl-4 py-2 hover:border-primary transition-colors">
+<span class="font-data-mono text-label-caps text-data-dim uppercase block mb-2">03 // Precision</span>
+<h3 class="font-headline-md text-on-surface mb-2 uppercase">Signal Loss</h3>
+<p class="font-body-sm text-on-surface-variant">High-value insights are buried under decorative UX and inefficient data visualization models.</p>
+</div>
+</div>
+</section>
+<!-- Features -->
+<section class="border-t border-terminal-border bg-surface-container-lowest py-16">
+<div class="px-4 mb-8">
+<span class="font-data-mono text-label-caps text-primary uppercase">[CORE_SYSTEM_FEATURES]</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2">
+<div class="border-b border-terminal-border p-6 hover:border-l-2 hover:border-primary transition-all bg-surface-container-lowest">
+<span class="material-symbols-outlined text-primary mb-4" data-icon="query_stats">query_stats</span>
+<h4 class="font-label-caps text-on-surface mb-2 uppercase">Frequency Analysis</h4>
+<p class="font-body-sm text-on-surface-variant">Real-time spectral monitoring of AI model output streams and emergent patterns.</p>
+</div>
+<div class="border-b border-terminal-border p-6 hover:border-l-2 hover:border-primary transition-all bg-surface-container-low">
+<span class="material-symbols-outlined text-primary mb-4" data-icon="hub">hub</span>
+<h4 class="font-label-caps text-on-surface mb-2 uppercase">Neural Mapping</h4>
+<p class="font-body-sm text-on-surface-variant">Vectorized visualization of conceptual hierarchies across large language models.</p>
+</div>
+<div class="border-b border-terminal-border p-6 hover:border-l-2 hover:border-primary transition-all bg-surface-container-low">
+<span class="material-symbols-outlined text-primary mb-4" data-icon="security">security</span>
+<h4 class="font-label-caps text-on-surface mb-2 uppercase">Logic Integrity</h4>
+<p class="font-body-sm text-on-surface-variant">Automated verification protocols for signal authenticity and hallucination detection.</p>
+</div>
+<div class="border-b border-terminal-border p-6 hover:border-l-2 hover:border-primary transition-all bg-surface-container-lowest">
+<span class="material-symbols-outlined text-primary mb-4" data-icon="memory">memory</span>
+<h4 class="font-label-caps text-on-surface mb-2 uppercase">Edge Synthesis</h4>
+<p class="font-body-sm text-on-surface-variant">Localized processing layers for rapid inference and insight extraction on the wire.</p>
+</div>
+</div>
+</section>
+<!-- Tool Grid -->
+<section class="px-4 py-16 bg-electromagnetic-ink">
+<div class="flex justify-between items-end mb-8">
+<h2 class="font-headline-md text-on-surface uppercase">Tool Grid</h2>
+<span class="font-data-mono text-[10px] text-data-dim uppercase">Cluster_A1</span>
+</div>
+<div class="grid grid-cols-2 gap-px bg-terminal-border border border-terminal-border">
+<div class="bg-electromagnetic-ink p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-on-surface-variant mb-2" data-icon="dataset">dataset</span>
+<span class="font-label-caps text-[9px] text-primary uppercase">Datastream</span>
+</div>
+<div class="bg-electromagnetic-ink p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-on-surface-variant mb-2" data-icon="code">code</span>
+<span class="font-label-caps text-[9px] text-primary uppercase">Script_Engine</span>
+</div>
+<div class="bg-electromagnetic-ink p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-on-surface-variant mb-2" data-icon="monitoring">monitoring</span>
+<span class="font-label-caps text-[9px] text-primary uppercase">Spectrogram</span>
+</div>
+<div class="bg-electromagnetic-ink p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-on-surface-variant mb-2" data-icon="webhook">webhook</span>
+<span class="font-label-caps text-[9px] text-primary uppercase">Link_Logic</span>
+</div>
+<div class="bg-electromagnetic-ink p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-on-surface-variant mb-2" data-icon="terminal">terminal</span>
+<span class="font-label-caps text-[9px] text-primary uppercase">Console_X</span>
+</div>
+<div class="bg-electromagnetic-ink p-4 flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-on-surface-variant mb-2" data-icon="settings_input_component">settings_input_component</span>
+<span class="font-label-caps text-[9px] text-primary uppercase">IO_Module</span>
+</div>
+</div>
+</section>
+<!-- "I want to..." Nav -->
+<section class="py-12 bg-surface-container overflow-hidden">
+<div class="px-4 mb-6">
+<span class="font-data-mono text-label-caps text-on-surface-variant uppercase">Target_Action_Selector</span>
+</div>
+<div class="flex overflow-x-auto gap-3 px-4 pb-4 custom-scrollbar">
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">DECODE_LLM</button>
+<button class="whitespace-nowrap border border-primary px-4 py-2 font-label-caps text-[10px] text-primary bg-primary/5">TRACE_PATH</button>
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">SCAN_MODEL</button>
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">OPTIMIZE_INPUT</button>
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">EXTRACT_CORE</button>
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">MAP_VECTORS</button>
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">AUDIT_SYSTEM</button>
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">SYNC_STREAMS</button>
+<button class="whitespace-nowrap border border-terminal-border px-4 py-2 font-label-caps text-[10px] text-on-surface hover:border-primary transition-all">EXPORT_JSON</button>
+</div>
+</section>
+<!-- Learning Paths -->
+<section class="px-4 py-16 bg-electromagnetic-ink border-t border-terminal-border">
+<h2 class="font-headline-md text-on-surface mb-8 uppercase">Learning Paths</h2>
+<div class="space-y-4">
+<div class="border border-terminal-border p-5 relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<span class="font-data-mono text-[10px] text-primary">PATH_01</span>
+<span class="font-data-mono text-[10px] text-data-dim">LVL: EXPERT</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-2">Prompt Engineering II</h3>
+<p class="font-body-sm text-on-surface-variant mb-6">Advanced semantic architecture for controlling non-deterministic outputs.</p>
+<div class="h-1 w-full bg-surface-container">
+<div class="h-full bg-primary w-2/3"></div>
+</div>
+<div class="mt-4 flex justify-between items-center">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Progress: 68%</span>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<div class="border border-terminal-border p-5 relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<span class="font-data-mono text-[10px] text-primary">PATH_02</span>
+<span class="font-data-mono text-[10px] text-data-dim">LVL: ADVANCED</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-2">Vector Databases</h3>
+<p class="font-body-sm text-on-surface-variant mb-6">Structuring long-term neural memory for specialized agent workflows.</p>
+<div class="h-1 w-full bg-surface-container">
+<div class="h-full bg-primary w-1/4"></div>
+</div>
+<div class="mt-4 flex justify-between items-center">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Progress: 25%</span>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Glossary Teasers -->
+<section class="py-16 px-4 bg-surface-container-lowest">
+<div class="flex items-center gap-4 mb-8">
+<div class="h-px flex-1 bg-terminal-border"></div>
+<span class="font-label-caps text-on-surface-variant uppercase">Glossary_V01</span>
+<div class="h-px flex-1 bg-terminal-border"></div>
+</div>
+<div class="grid grid-cols-1 gap-px bg-terminal-border">
+<div class="bg-surface-container-lowest p-4 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<span class="font-data-mono text-on-surface uppercase">Atonal_Drift</span>
+<span class="material-symbols-outlined text-data-dim text-xs" data-icon="north_east">north_east</span>
+</div>
+<div class="bg-surface-container-lowest p-4 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<span class="font-data-mono text-on-surface uppercase">Latent_Space</span>
+<span class="material-symbols-outlined text-data-dim text-xs" data-icon="north_east">north_east</span>
+</div>
+<div class="bg-surface-container-lowest p-4 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<span class="font-data-mono text-on-surface uppercase">Signal_Decay</span>
+<span class="material-symbols-outlined text-data-dim text-xs" data-icon="north_east">north_east</span>
+</div>
+<div class="bg-surface-container-lowest p-4 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<span class="font-data-mono text-on-surface uppercase">Neural_Bypass</span>
+<span class="material-symbols-outlined text-data-dim text-xs" data-icon="north_east">north_east</span>
+</div>
+<div class="bg-surface-container-lowest p-4 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<span class="font-data-mono text-on-surface uppercase">Vector_Anchor</span>
+<span class="material-symbols-outlined text-data-dim text-xs" data-icon="north_east">north_east</span>
+</div>
+<div class="bg-surface-container-lowest p-4 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<span class="font-data-mono text-on-surface uppercase">Weight_Friction</span>
+<span class="material-symbols-outlined text-data-dim text-xs" data-icon="north_east">north_east</span>
+</div>
+</div>
+</section>
+<!-- CTA Banner -->
+<section class="px-4 py-20 bg-electromagnetic-ink text-center border-t border-terminal-border">
+<h2 class="font-headline-md text-on-surface mb-6 uppercase">Ready to enter the signal layer?</h2>
+<p class="font-body-sm text-on-surface-variant mb-10 max-w-xs mx-auto">Access precision instruments for the AI era. No decorative filler. Just pure discovery velocity.</p>
+<div class="flex flex-col gap-4">
+<button class="relative group bg-transparent border border-electric-teal text-electric-teal font-label-caps py-4 overflow-hidden">
+<span class="relative z-10 uppercase font-bold">Secure Access</span>
+<div class="absolute inset-0 bg-electric-teal -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out"></div>
+<span class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:text-electromagnetic-ink transition-opacity duration-300 z-20 font-bold uppercase">Secure Access</span>
+</button>
+<button class="font-label-caps text-[10px] text-data-dim uppercase hover:text-primary transition-colors">Request Enterprise Demo</button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container border-t border-terminal-border py-12 px-4 flex flex-col gap-8">
+<div class="flex flex-col gap-2">
+<span class="font-label-caps text-primary uppercase text-sm">AVELIX</span>
+<span class="font-data-mono text-[10px] text-data-dim uppercase tracking-widest">High-Velocity Signal Layer</span>
+</div>
+<div class="grid grid-cols-2 gap-y-4">
+<a class="font-data-mono text-on-surface-variant hover:text-primary text-[11px] uppercase" href="#">Documentation</a>
+<a class="font-data-mono text-on-surface-variant hover:text-primary text-[11px] uppercase" href="#">System Status</a>
+<a class="font-data-mono text-on-surface-variant hover:text-primary text-[11px] uppercase" href="#">Privacy Protocol</a>
+<a class="font-data-mono text-on-surface-variant hover:text-primary text-[11px] uppercase" href="#">Security Audit</a>
+</div>
+<div class="border-t border-terminal-border pt-6 flex flex-col gap-4">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-data-dim hover:text-primary cursor-pointer" data-icon="terminal">terminal</span>
+<span class="material-symbols-outlined text-data-dim hover:text-primary cursor-pointer" data-icon="rss_feed">rss_feed</span>
+<span class="material-symbols-outlined text-data-dim hover:text-primary cursor-pointer" data-icon="hub">hub</span>
+</div>
+<p class="font-data-mono text-[9px] text-data-dim">© 2024 AVELIX // ALL SIGNALS ENCRYPTED. [37.7749° N, 122.4194° W]</p>
+</div>
+</footer>
+</body></html>
