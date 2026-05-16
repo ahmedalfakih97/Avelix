@@ -77,6 +77,20 @@ export async function getRelatedTools(slugs: string[]): Promise<Tool[]> {
   return (data ?? []) as Tool[]
 }
 
+export async function getFeaturedTools(limit = 6): Promise<Tool[]> {
+  if (USE_MOCK) return MOCK_TOOLS.slice(0, limit)
+
+  const { createServerSupabaseClient } = await import('@/lib/supabase-server')
+  const supabase = createServerSupabaseClient()
+  const { data } = await supabase
+    .from('tools')
+    .select('*')
+    .eq('status', 'published')
+    .order('avelix_rating', { ascending: false })
+    .limit(limit)
+  return (data ?? []) as Tool[]
+}
+
 function getMockTools(filters: ToolFilters): { tools: Tool[]; total: number } {
   let tools = [...MOCK_TOOLS]
 

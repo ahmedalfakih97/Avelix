@@ -75,6 +75,20 @@ export async function getRelatedModels(slugs: string[]): Promise<Model[]> {
   return (data ?? []) as Model[]
 }
 
+export async function getRecentModels(limit = 3): Promise<Model[]> {
+  if (USE_MOCK) return MOCK_MODELS.slice(0, limit)
+
+  const { createServerSupabaseClient } = await import('@/lib/supabase-server')
+  const supabase = createServerSupabaseClient()
+  const { data } = await supabase
+    .from('models')
+    .select('*')
+    .eq('status', 'published')
+    .order('updated_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []) as Model[]
+}
+
 function getMockModels(filters: ModelFilters): { models: Model[]; total: number } {
   let models = [...MOCK_MODELS]
 

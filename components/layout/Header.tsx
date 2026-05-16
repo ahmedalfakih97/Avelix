@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import MobileMenu from './MobileMenu'
 
 const NAV_LINKS = [
   { href: '/tools',    label: 'Tools' },
@@ -12,7 +13,7 @@ const NAV_LINKS = [
 
 export default function Header() {
   return (
-    <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-terminal-border flex justify-between items-center h-16 px-4">
+    <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-terminal-border flex justify-between items-center h-16 px-4 relative">
       <div className="flex items-center gap-6">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo.png" alt="Avelix" width={120} height={32} priority className="h-8 w-auto" />
@@ -29,12 +30,15 @@ export default function Header() {
           ))}
         </nav>
       </div>
-      <Link
-        href="/services"
-        className="bg-transparent border border-electric-teal text-electric-teal font-mono text-[10px] px-3 py-1.5 hover:bg-electric-teal/10 transition-all uppercase tracking-widest"
-      >
-        Get Started
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link
+          href="/services"
+          className="hidden md:block bg-transparent border border-electric-teal text-electric-teal font-mono text-[10px] px-3 py-1.5 hover:bg-electric-teal/10 transition-all uppercase tracking-widest"
+        >
+          Book a Call
+        </Link>
+        <MobileMenu />
+      </div>
     </header>
   )
 }
