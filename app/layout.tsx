@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Syne, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google'
+import GlobalSearch from '@/components/library/GlobalSearch'
 import './globals.css'
 
 const syne = Syne({
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${syne.variable} ${jetbrainsMono.variable} ${plusJakarta.variable} font-body antialiased overflow-x-hidden`}
       >
         {children}
+        <GlobalSearch />
       </body>
     </html>
   )

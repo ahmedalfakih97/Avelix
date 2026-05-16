@@ -6,6 +6,8 @@ import type { Tool, ToolFilters } from '@/types/tool'
 import ToolCard from '@/components/library/ToolCard'
 import FilterBar from '@/components/library/FilterBar'
 import SearchBox from '@/components/library/SearchBox'
+import ActiveFilterTags, { type ActiveTag } from '@/components/library/ActiveFilterTags'
+import { CATEGORIES } from '@/lib/mock-tools'
 
 interface ToolsLibraryClientProps {
   initialTools: Tool[]
@@ -42,6 +44,39 @@ export default function ToolsLibraryClient({
   const [tools] = useState<Tool[]>(initialTools)
   const [total] = useState(initialTotal)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+
+  const activeTags: ActiveTag[] = [
+    filters.category && {
+      key: 'category',
+      label: `Category: ${CATEGORIES.find((c) => c.id === filters.category)?.name ?? filters.category}`,
+      onRemove: () => handleFiltersChange({ ...filters, category: undefined, page: 1 }),
+    },
+    filters.pricing && {
+      key: 'pricing',
+      label: `Plan: ${filters.pricing}`,
+      onRemove: () => handleFiltersChange({ ...filters, pricing: undefined, page: 1 }),
+    },
+    filters.user_type && {
+      key: 'user_type',
+      label: `User: ${filters.user_type}`,
+      onRemove: () => handleFiltersChange({ ...filters, user_type: undefined, page: 1 }),
+    },
+    filters.has_free_plan && {
+      key: 'has_free_plan',
+      label: 'Free plan',
+      onRemove: () => handleFiltersChange({ ...filters, has_free_plan: false, page: 1 }),
+    },
+    filters.has_api && {
+      key: 'has_api',
+      label: 'Has API',
+      onRemove: () => handleFiltersChange({ ...filters, has_api: false, page: 1 }),
+    },
+    filters.no_code && {
+      key: 'no_code',
+      label: 'No-Code',
+      onRemove: () => handleFiltersChange({ ...filters, no_code: false, page: 1 }),
+    },
+  ].filter(Boolean) as ActiveTag[]
 
   const handleFiltersChange = useCallback(
     (next: ToolFilters) => {
@@ -80,6 +115,11 @@ export default function ToolsLibraryClient({
           />
         </div>
       </div>
+
+      <ActiveFilterTags
+        tags={activeTags}
+        onClearAll={() => handleFiltersChange({ sort: filters.sort })}
+      />
 
       <div className="flex">
         {/* Desktop sidebar */}

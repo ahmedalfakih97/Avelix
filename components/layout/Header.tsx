@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import MobileMenu from './MobileMenu'
+import SearchButton from './SearchButton'
 
 const NAV_LINKS = [
   { href: '/tools',    label: 'Tools' },
@@ -30,7 +31,8 @@ export default function Header() {
           ))}
         </nav>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <SearchButton />
         <Link
           href="/services"
           className="hidden md:block bg-transparent border border-electric-teal text-electric-teal font-mono text-[10px] px-3 py-1.5 hover:bg-electric-teal/10 transition-all uppercase tracking-widest"
