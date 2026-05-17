@@ -229,6 +229,31 @@ export async function getModelsByCategory(category: string, limit = 24): Promise
   return (data ?? []) as Model[]
 }
 
+export async function getRelatedModelsByCategory(
+  category: string,
+  excludeSlug: string,
+  limit = 4,
+): Promise<Model[]> {
+  if (!category) return []
+  if (USE_MOCK) {
+    return MOCK_MODELS
+      .filter((m) => m.avelix_category === category && m.slug !== excludeSlug)
+      .slice(0, limit)
+  }
+
+  const { createServerSupabaseClient } = await import('@/lib/supabase-server')
+  const supabase = createServerSupabaseClient()
+  const { data } = await supabase
+    .from('models')
+    .select('*')
+    .eq('status', 'published')
+    .eq('avelix_category', category)
+    .neq('slug', excludeSlug)
+    .order('confidence_score', { ascending: false })
+    .limit(limit)
+  return (data ?? []) as Model[]
+}
+
 export async function getProviders(): Promise<{ provider: string; provider_country: string | null }[]> {
   if (USE_MOCK) {
     const seen = new Set<string>()

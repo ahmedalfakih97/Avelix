@@ -6,7 +6,6 @@ import SearchButton from './SearchButton'
 const NAV_LINKS = [
   { href: '/tools',    label: 'Tools' },
   { href: '/models',   label: 'Models' },
-  { href: '/skills',   label: 'Skills' },
   { href: '/guides',   label: 'Guides' },
   { href: '/glossary', label: 'Glossary' },
   { href: '/services', label: 'Services' },
