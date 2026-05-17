@@ -58,7 +58,13 @@ export function parseList(value: string | null | undefined): string[] {
 export function isApiAvailable(
   value: boolean | string | null | undefined,
 ): boolean | null {
-  if (value === true || value === 'Yes' || value === 'yes' || value === 'Available' || value === 'available') return true
-  if (value === false || value === 'No' || value === 'no' || value === 'Not available') return false
+  if (value === true) return true
+  if (typeof value === 'string') {
+    const v = value.toLowerCase().trim()
+    if (v === 'yes' || v === 'available' || v === 'api' || v === 'public api' ||
+        v.startsWith('available') || v.includes('via api') || v.includes('api access')) return true
+    if (v === 'no' || v === 'not available' || v === 'none') return false
+  }
+  if (value === false) return false
   return null
 }

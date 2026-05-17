@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Model } from '@/types/model'
+import { openSourceLabel, displayOrNull } from '@/lib/utils/display'
 
 type CardModel = Pick<Model,
   | 'slug' | 'title' | 'provider' | 'model_type' | 'short_description'
@@ -219,12 +220,12 @@ export default function ModelCard({ model, variant = 'default' }: ModelCardProps
             {formatCtx(model.context_window)}
           </span>
         )}
-        {model.avg_response_latency && (
+        {displayOrNull(model.avg_response_latency) && (
           <span className="font-mono text-[8px] text-on-surface-variant border border-terminal-border px-1.5 py-0.5 uppercase">
-            {model.avg_response_latency.startsWith('Fast')   ? 'FAST'
-             : model.avg_response_latency.startsWith('Medium') ? 'MED'
-             : model.avg_response_latency.startsWith('Slow')   ? 'SLOW'
-             : model.avg_response_latency.toUpperCase()}
+            {model.avg_response_latency!.startsWith('Fast')   ? 'FAST'
+             : model.avg_response_latency!.startsWith('Medium') ? 'MED'
+             : model.avg_response_latency!.startsWith('Slow')   ? 'SLOW'
+             : model.avg_response_latency!.toUpperCase()}
           </span>
         )}
         {model.modality && (
@@ -237,15 +238,19 @@ export default function ModelCard({ model, variant = 'default' }: ModelCardProps
 
       {/* Source / license + pricing tier row */}
       <div className="flex flex-wrap gap-1.5 mb-3">
-        {/* Open / Closed source */}
-        <span className={`inline-flex items-center gap-0.5 font-mono text-[8px] border px-1.5 py-0.5 uppercase ${
-          model.is_open_source
-            ? 'text-primary border-primary/40'
-            : 'text-data-dim border-terminal-border'
-        }`}>
-          <span className="material-symbols-outlined text-[10px]">{model.is_open_source ? 'lock_open' : 'lock'}</span>
-          {model.is_open_source ? 'OPEN SOURCE' : 'CLOSED'}
-        </span>
+        {/* Open / Closed source — hidden when unknown/pending */}
+        {openSourceLabel(model.is_open_source) && (
+          <span className={`inline-flex items-center gap-0.5 font-mono text-[8px] border px-1.5 py-0.5 uppercase ${
+            openSourceLabel(model.is_open_source) === 'Open Source'
+              ? 'text-primary border-primary/40'
+              : 'text-data-dim border-terminal-border'
+          }`}>
+            <span className="material-symbols-outlined text-[10px]">
+              {openSourceLabel(model.is_open_source) === 'Open Source' ? 'lock_open' : 'lock'}
+            </span>
+            {openSourceLabel(model.is_open_source)!.toUpperCase()}
+          </span>
+        )}
 
         {/* Pricing tier */}
         {tier && tier !== 'Unknown' && (

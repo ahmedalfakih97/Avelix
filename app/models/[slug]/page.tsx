@@ -273,17 +273,17 @@ export default async function ModelPage({ params }: Props) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {model.official_source_url && (
+              {model.documentation_url && (
                 <a
-                  href={model.official_source_url}
+                  href={model.documentation_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative group bg-transparent border border-electric-teal text-electric-teal font-mono text-[11px] py-3 px-6 uppercase overflow-hidden inline-block"
                 >
-                  <span className="relative z-10">View Official Docs →</span>
+                  <span className="relative z-10">View Docs →</span>
                   <div className="absolute inset-0 bg-electric-teal -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
                   <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:text-electromagnetic-ink transition-opacity duration-300 z-20 font-mono text-[11px] uppercase">
-                    View Official Docs →
+                    View Docs →
                   </span>
                 </a>
               )}
@@ -402,22 +402,24 @@ export default async function ModelPage({ params }: Props) {
               Technical Specifications
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-terminal-border border border-terminal-border">
-              <SpecCell label="CONTEXT_WINDOW">
-                <p className="font-mono text-[13px] text-on-surface">
-                  {model.context_window ? `${formatCtx(model.context_window)} tokens` : '—'}
-                </p>
-                {model.context_window && (
+              {model.context_window && (
+                <SpecCell label="CONTEXT_WINDOW">
+                  <p className="font-mono text-[13px] text-on-surface">
+                    {formatCtx(model.context_window)} tokens
+                  </p>
                   <p className="font-body text-[11px] text-on-surface-variant mt-1">
                     ~{Math.round(model.context_window * 0.75).toLocaleString()} words
                   </p>
-                )}
-              </SpecCell>
+                </SpecCell>
+              )}
 
-              <SpecCell label="MAX_OUTPUT">
-                <p className="font-mono text-[13px] text-on-surface">
-                  {model.max_output_tokens ? `${formatCtx(model.max_output_tokens)} tokens` : '—'}
-                </p>
-              </SpecCell>
+              {model.max_output_tokens && (
+                <SpecCell label="MAX_OUTPUT">
+                  <p className="font-mono text-[13px] text-on-surface">
+                    {formatCtx(model.max_output_tokens)} tokens
+                  </p>
+                </SpecCell>
+              )}
 
               <SpecCell label="RESPONSE_SPEED">
                 {model.avg_response_latency ? (
@@ -430,40 +432,46 @@ export default async function ModelPage({ params }: Props) {
                 )}
               </SpecCell>
 
-              <SpecCell label="PARAMETER_COUNT">
-                <p className="font-mono text-[13px] text-on-surface">{paramCount ?? '—'}</p>
-              </SpecCell>
+              {paramCount && (
+                <SpecCell label="PARAMETER_COUNT">
+                  <p className="font-mono text-[13px] text-on-surface">{paramCount}</p>
+                </SpecCell>
+              )}
 
-              <SpecCell label="INPUT_TYPES">
-                <div className="flex flex-wrap gap-1">
-                  {model.input_types.map((t) => <SpecBadge key={t} type="input" value={t} />)}
-                </div>
-              </SpecCell>
+              {model.input_types.length > 0 && (
+                <SpecCell label="INPUT_TYPES">
+                  <div className="flex flex-wrap gap-1">
+                    {model.input_types.map((t) => <SpecBadge key={t} type="input" value={t} />)}
+                  </div>
+                </SpecCell>
+              )}
 
-              <SpecCell label="OUTPUT_TYPES">
-                <div className="flex flex-wrap gap-1">
-                  {model.output_types.map((t) => <SpecBadge key={t} type="output" value={t} />)}
-                </div>
-              </SpecCell>
+              {model.output_types.length > 0 && (
+                <SpecCell label="OUTPUT_TYPES">
+                  <div className="flex flex-wrap gap-1">
+                    {model.output_types.map((t) => <SpecBadge key={t} type="output" value={t} />)}
+                  </div>
+                </SpecCell>
+              )}
 
-              <SpecCell label="MODALITY">
-                <p className="font-mono text-[11px] text-on-surface">{model.modality ?? '—'}</p>
-              </SpecCell>
+              {displayOrNull(model.modality) && (
+                <SpecCell label="MODALITY">
+                  <p className="font-mono text-[11px] text-on-surface">{displayOrNull(model.modality)}</p>
+                </SpecCell>
+              )}
 
-              <SpecCell label="DEPLOYMENT">
-                {model.deployment_options && model.deployment_options.length > 0 ? (
+              {model.deployment_options && model.deployment_options.length > 0 && (
+                <SpecCell label="DEPLOYMENT">
                   <div className="flex flex-wrap gap-1">
                     {model.deployment_options.map((d) => (
                       <span key={d} className="font-mono text-[8px] text-on-surface-variant border border-terminal-border px-1.5 py-0.5 uppercase">{d}</span>
                     ))}
                   </div>
-                ) : (
-                  <p className="font-mono text-[11px] text-data-dim">—</p>
-                )}
-              </SpecCell>
+                </SpecCell>
+              )}
 
-              <SpecCell label="OPEN_SOURCE">
-                {openSourceDisplay ? (
+              {openSourceDisplay && (
+                <SpecCell label="OPEN_SOURCE">
                   <span className={`inline-flex items-center gap-1 font-mono text-[9px] border px-2 py-0.5 uppercase ${
                     openSourceDisplay === 'Open Source'
                       ? 'text-signal-orange border-signal-orange/40'
@@ -474,18 +482,21 @@ export default async function ModelPage({ params }: Props) {
                     </span>
                     {openSourceDisplay.toUpperCase()}
                   </span>
-                ) : (
-                  <p className="font-mono text-[11px] text-data-dim">—</p>
-                )}
-              </SpecCell>
+                </SpecCell>
+              )}
 
-              <SpecCell label="API_ACCESS">
-                {apiAvailable !== null ? (
-                  <SpecBadge type="api" value={apiAvailable ? 'true' : 'false'} />
-                ) : (
-                  <p className="font-mono text-[11px] text-data-dim">—</p>
-                )}
-              </SpecCell>
+              {apiAvailable !== null && (
+                <SpecCell label="API_ACCESS">
+                  <span className={`inline-flex items-center gap-1 font-mono text-[9px] border px-2 py-0.5 uppercase ${
+                    apiAvailable
+                      ? 'text-primary border-primary/40'
+                      : 'text-data-dim border-terminal-border'
+                  }`}>
+                    <span className="material-symbols-outlined text-[11px]">api</span>
+                    {apiAvailable ? 'API Available' : 'No Public API'}
+                  </span>
+                </SpecCell>
+              )}
             </div>
 
             {qualityNotes && (
@@ -525,23 +536,29 @@ export default async function ModelPage({ params }: Props) {
                 <div className="bg-electromagnetic-ink p-5">
                   <p className="font-mono text-[10px] text-electric-teal uppercase mb-4">{'// Strengths'}</p>
                   <div className="flex flex-col gap-3">
-                    {model.strengths.map((s, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="material-symbols-outlined text-electric-teal text-base flex-shrink-0 mt-0.5">add</span>
-                        <span className="font-body text-body-sm text-on-surface-variant">{s}</span>
-                      </div>
-                    ))}
+                    {model.strengths
+                      .map((s) => cleanDisplayText(s))
+                      .filter(Boolean)
+                      .map((s, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="material-symbols-outlined text-electric-teal text-base flex-shrink-0 mt-0.5">add</span>
+                          <span className="font-body text-body-sm text-on-surface-variant">{s}</span>
+                        </div>
+                      ))}
                   </div>
                 </div>
                 <div className="bg-surface-container-lowest p-5">
                   <p className="font-mono text-[10px] text-signal-orange uppercase mb-4">{'// Weaknesses'}</p>
                   <div className="flex flex-col gap-3">
-                    {model.weaknesses.map((w, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="material-symbols-outlined text-signal-orange text-base flex-shrink-0 mt-0.5">remove</span>
-                        <span className="font-body text-body-sm text-on-surface-variant">{w}</span>
-                      </div>
-                    ))}
+                    {model.weaknesses
+                      .map((w) => cleanDisplayText(w))
+                      .filter(Boolean)
+                      .map((w, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="material-symbols-outlined text-signal-orange text-base flex-shrink-0 mt-0.5">remove</span>
+                          <span className="font-body text-body-sm text-on-surface-variant">{w}</span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               </div>
@@ -673,7 +690,7 @@ export default async function ModelPage({ params }: Props) {
                       <p className="font-mono text-[11px] text-on-surface uppercase truncate">{m.title}</p>
                       <p className="font-mono text-[9px] text-data-dim uppercase">{m.provider}</p>
                     </div>
-                    <SpecBadge type="speed" value={m.speed} />
+                    {displayOrNull(m.speed as string) && <SpecBadge type="speed" value={m.speed} />}
                   </Link>
                 ))}
               </div>
