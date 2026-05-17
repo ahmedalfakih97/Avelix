@@ -7,8 +7,14 @@ import { getSkills } from '@/lib/queries/skills'
 import type { SkillFilters } from '@/types/skill'
 
 export const metadata: Metadata = {
-  title: 'AI Skills Library — Learn How to Use AI Effectively | Avelix',
+  title: 'AI Skills Library — Learn How to Use AI Effectively',
   description: 'Structured, practical AI skills from beginner to advanced. Step-by-step guides for prompt engineering, automation, agents, and more.',
+  alternates: { canonical: '/skills' },
+  openGraph: {
+    title: 'AI Skills Library | Avelix',
+    description: 'Learn AI skills from beginner to advanced. Prompt engineering, automation, agents — step-by-step.',
+    type: 'website',
+  },
 }
 
 interface SearchParams {

@@ -1,0 +1,193 @@
+{
+  "name": "Avelix — Update Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 14 * * *" }]
+        }
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000001",
+      "name": "Schedule — 14:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 380]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tools",
+        "returnAll": true,
+        "filterByFormula": "status = 'published'",
+        "options": { "select": "id,title,slug,source_urls,last_synced_at" }
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000002",
+      "name": "Supabase — Published Tools",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [480, 280]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "models",
+        "returnAll": true,
+        "filterByFormula": "status = 'published'",
+        "options": { "select": "id,title,slug,source_urls,last_synced_at" }
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000003",
+      "name": "Supabase — Published Models",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [480, 480]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByIndex",
+        "options": {}
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000004",
+      "name": "Merge Tools + Models",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [720, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pick first source URL and check if last_synced_at is > 1 day ago\nconst item = $input.item.json;\nconst sources = Array.isArray(item.source_urls) ? item.source_urls : [];\nconst primaryUrl = sources[0] ?? null;\n\nif (!primaryUrl) {\n  return []; // no source to monitor\n}\n\nconst lastSync = item.last_synced_at ? new Date(item.last_synced_at) : new Date(0);\nconst ageMs = Date.now() - lastSync.getTime();\nconst ageDays = ageMs / (1000 * 60 * 60 * 24);\n\nreturn [{\n  json: {\n    ...item,\n    primary_source: primaryUrl,\n    age_days: Math.round(ageDays),\n    should_check: ageDays >= 1\n  }\n}];"
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000005",
+      "name": "Prep Source Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 380]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.should_check }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000006",
+      "name": "Needs Check?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1200, 380]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.primary_source }}",
+        "options": {
+          "timeout": 20000,
+          "response": { "response": { "fullResponse": false, "responseFormat": "text" } }
+        }
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000007",
+      "name": "Fetch Source Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1440, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compute a simple content fingerprint (length + first 500 chars hash-like)\nconst content = String($input.item.json ?? '');\nconst fingerprint = content.length + '_' + content.slice(0, 500).split('').reduce((a, c) => (a + c.charCodeAt(0)) & 0xffffffff, 0);\n\nconst prev = $('Prep Source Check').item.json;\nreturn [{\n  json: {\n    ...prev,\n    fingerprint,\n    content_length: content.length\n  }\n}];"
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000008",
+      "name": "Compute Fingerprint",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 512,\n  \"system\": \"You detect what changed on an AI tool's page compared to what we previously knew. Respond ONLY in valid JSON. No markdown.\",\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Tool: {{ $json.title }}\\nURL: {{ $json.primary_source }}\\nPage size: {{ $json.content_length }} chars\\n\\nDoes this page likely contain new information about pricing, features, or major changes?\\n\\nReturn JSON:\\n{\\n  \\\"has_likely_change\\\": true | false,\\n  \\\"change_type\\\": \\\"pricing\\\" | \\\"feature\\\" | \\\"deprecation\\\" | \\\"launch\\\" | \\\"other\\\" | null,\\n  \\\"description\\\": \\\"one sentence summary or null\\\",\\n  \\\"confidence\\\": 0.0-1.0\\n}\"\n  }]\n}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000009",
+      "name": "Claude — Detect Change",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1920, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json;\nlet changeInfo;\ntry {\n  const text = raw.content?.[0]?.text ?? '{}';\n  changeInfo = JSON.parse(text);\n} catch {\n  return [];\n}\n\nif (!changeInfo.has_likely_change || changeInfo.confidence < 0.6) {\n  return []; // no significant change detected\n}\n\nconst prev = $('Compute Fingerprint').item.json;\nreturn [{\n  json: {\n    ...prev,\n    change_type: changeInfo.change_type,\n    change_description: changeInfo.description,\n    change_confidence: changeInfo.confidence\n  }\n}];"
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000010",
+      "name": "Parse Change Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AVELIX_BASE_URL }}/api/webhooks/sync",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content_type\": \"tool\",\n  \"title\": \"{{ $json.title }}\",\n  \"slug\": \"{{ $json.slug }}\",\n  \"short_description\": \"{{ $json.change_description }}\",\n  \"source_url\": \"{{ $json.primary_source }}\",\n  \"ai_confidence\": {{ Math.round($json.change_confidence * 100) }},\n  \"action\": \"update\",\n  \"summary_of_changes\": \"{{ $json.change_type }}: {{ $json.change_description }}\"\n}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "c3d4e5f6-0003-0003-0003-000000000011",
+      "name": "Queue Update for Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2400, 260]
+    }
+  ],
+  "connections": {
+    "Schedule — 14:00 UTC": {
+      "main": [
+        [
+          { "node": "Supabase — Published Tools",  "type": "main", "index": 0 },
+          { "node": "Supabase — Published Models", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Supabase — Published Tools":  { "main": [[{ "node": "Merge Tools + Models", "type": "main", "index": 0 }]] },
+    "Supabase — Published Models": { "main": [[{ "node": "Merge Tools + Models", "type": "main", "index": 1 }]] },
+    "Merge Tools + Models":     { "main": [[{ "node": "Prep Source Check",  "type": "main", "index": 0 }]] },
+    "Prep Source Check":        { "main": [[{ "node": "Needs Check?",        "type": "main", "index": 0 }]] },
+    "Needs Check?": {
+      "main": [
+        [{ "node": "Fetch Source Page", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Fetch Source Page":    { "main": [[{ "node": "Compute Fingerprint",  "type": "main", "index": 0 }]] },
+    "Compute Fingerprint":  { "main": [[{ "node": "Claude — Detect Change", "type": "main", "index": 0 }]] },
+    "Claude — Detect Change": { "main": [[{ "node": "Parse Change Result", "type": "main", "index": 0 }]] },
+    "Parse Change Result":  { "main": [[{ "node": "Queue Update for Review", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "avelix" }, { "name": "monitor" }]
+}

@@ -7,6 +7,8 @@ import CTABlock from '@/components/shared/CTABlock'
 import TermPill from '@/components/shared/TermPill'
 import ToolCard from '@/components/library/ToolCard'
 import SkillCard from '@/components/library/SkillCard'
+import { JsonLd } from '@/components/shared/JsonLd'
+import { Breadcrumbs } from '@/components/shared/Breadcrumbs'
 import {
   getGlossaryTermBySlug,
   getPublishedTermSlugs,
@@ -27,16 +29,22 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const term = await getGlossaryTermBySlug(params.term)
   if (!term) return {}
+  const ogImageUrl = `/api/og/glossary?term=${term.slug}`
   return {
-    title: `What is ${term.title}? — AI Glossary | Avelix`,
+    title: `What is ${term.title}? — AI Glossary`,
     description: term.simple_definition,
+    alternates: { canonical: `/glossary/${term.slug}` },
     openGraph: {
       title: `What is ${term.title}?`,
       description: term.simple_definition,
       type: 'article',
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `What is ${term.title}?` }],
     },
-    alternates: {
-      canonical: `/glossary/${term.slug}`,
+    twitter: {
+      card: 'summary_large_image',
+      title: `What is ${term.title}?`,
+      description: term.simple_definition,
+      images: [ogImageUrl],
     },
   }
 }
@@ -94,27 +102,21 @@ export default async function GlossaryTermPage({ params }: Props) {
   return (
     <>
       <Header />
-
-      {/* FAQ structured data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-
+      <JsonLd data={faqSchema} />
       <main className="pt-16 bg-electromagnetic-ink min-h-screen">
 
         {/* Hero */}
         <section className="border-b border-terminal-border px-4 py-12 bg-surface-container-lowest">
           <div className="max-w-3xl">
-            <div className="flex items-center gap-2 mb-4">
-              <Link
-                href="/glossary"
-                className="font-mono text-[10px] text-data-dim uppercase hover:text-primary transition-colors"
-              >
-                [GLOSSARY_V01]
-              </Link>
-              <span className="text-data-dim">/</span>
-              <span className="font-mono text-[10px] text-primary uppercase">{term.title}</span>
+            <div className="mb-4">
+              <Breadcrumbs
+                crumbs={[
+                  { label: 'Avelix', href: '/' },
+                  { label: 'Glossary', href: '/glossary' },
+                  { label: term.title.charAt(0).toUpperCase(), href: `/glossary#${term.title.charAt(0).toUpperCase()}` },
+                  { label: term.title },
+                ]}
+              />
             </div>
 
             <h1 className="font-headline text-display-lg text-on-surface uppercase leading-none mb-6">
@@ -183,7 +185,7 @@ export default async function GlossaryTermPage({ params }: Props) {
             <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
               <SectionLabel>[WHERE_ITS_USED]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
-                Where You'll See This
+                Where You&apos;ll See This
               </h2>
               <p className="font-body text-body-lg text-on-surface-variant">{term.where_its_used}</p>
             </section>

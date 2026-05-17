@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import StatCard from '@/components/admin/StatCard'
 import ActivityFeed from '@/components/admin/ActivityFeed'
+import SyncTriggerButton from '@/components/admin/SyncTriggerButton'
 import { getAdminStats, getRecentChangelogs } from '@/lib/queries/admin'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -22,7 +23,7 @@ export default async function AdminDashboard() {
 
       {/* Stats grid */}
       <section>
-        <span className="font-mono text-[9px] text-data-dim uppercase block mb-3">// Content Overview</span>
+        <span className="font-mono text-[9px] text-data-dim uppercase block mb-3">{'// Content Overview'}</span>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-terminal-border border border-terminal-border">
           <StatCard label="Tools Published"   value={stats.tools.published}  subLabel={`${stats.tools.total} total`}  icon="construction"  accent="primary" />
           <StatCard label="Tools Pending"     value={stats.tools.pending}   subLabel={`${stats.tools.draft} drafts`} icon="pending"       accent="orange"  />
@@ -37,7 +38,7 @@ export default async function AdminDashboard() {
 
       {/* Quick actions */}
       <section>
-        <span className="font-mono text-[9px] text-data-dim uppercase block mb-3">// Quick Actions</span>
+        <span className="font-mono text-[9px] text-data-dim uppercase block mb-3">{'// Quick Actions'}</span>
         <div className="flex flex-wrap gap-3">
           <Link
             href="/admin/queue"
@@ -46,13 +47,7 @@ export default async function AdminDashboard() {
             <span className="material-symbols-outlined text-[16px]">pending_actions</span>
             Review Queue ({stats.queue.pending} items)
           </Link>
-          <button
-            onClick={() => {}}
-            className="flex items-center gap-2 border border-terminal-border text-on-surface-variant font-mono text-[10px] uppercase px-4 py-2.5 hover:border-primary hover:text-primary transition-colors"
-          >
-            <span className="material-symbols-outlined text-[16px]">sync</span>
-            Trigger Manual Sync
-          </button>
+          <SyncTriggerButton />
           <Link
             href="/tools"
             target="_blank"
@@ -67,7 +62,7 @@ export default async function AdminDashboard() {
       {/* Activity feed */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <span className="font-mono text-[9px] text-data-dim uppercase">// Recent Activity</span>
+          <span className="font-mono text-[9px] text-data-dim uppercase">{'// Recent Activity'}</span>
           <span className="font-mono text-[9px] text-data-dim uppercase">Last 10 changes</span>
         </div>
         <div className="border border-terminal-border bg-surface-container-lowest">

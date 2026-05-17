@@ -42,7 +42,14 @@ async function syncModels() {
   console.log('Syncing models to Algolia...')
   const { data, error } = await supabase
     .from('models')
-    .select('id, title, slug, short_description, provider, model_type, tags, is_open_source, pricing_model, status')
+    .select([
+      'id, title, slug, short_description, provider, model_type, tags, is_open_source, pricing_model, status',
+      'avelix_category, avelix_tags, pricing_tier_label, has_free_tier',
+      'avg_response_latency, popularity_tier, avelix_featured',
+      'parameter_count, release_year, provider_country, modality',
+      'vision_support, audio_support, tool_use_support, fine_tuning_support',
+      'rag_suitability, enterprise_ready, context_window',
+    ].join(', '))
     .eq('status', 'published')
   if (error) { console.error('models fetch error:', error.message); return }
 
@@ -57,6 +64,24 @@ async function syncModels() {
     tags: m.tags ?? [],
     is_open_source: m.is_open_source,
     pricing_model: m.pricing_model,
+    avelix_category: m.avelix_category,
+    avelix_tags: m.avelix_tags ?? [],
+    pricing_tier_label: m.pricing_tier_label,
+    has_free_tier: m.has_free_tier ?? false,
+    avg_response_latency: m.avg_response_latency,
+    popularity_tier: m.popularity_tier,
+    avelix_featured: m.avelix_featured ?? false,
+    parameter_count: m.parameter_count,
+    release_year: m.release_year,
+    provider_country: m.provider_country,
+    modality: m.modality,
+    vision_support: m.vision_support ?? false,
+    audio_support: m.audio_support ?? false,
+    tool_use_support: m.tool_use_support ?? false,
+    fine_tuning_support: m.fine_tuning_support ?? false,
+    rag_suitability: m.rag_suitability,
+    enterprise_ready: m.enterprise_ready ?? false,
+    context_window: m.context_window,
     url: `/models/${m.slug}`
   }))
 
@@ -103,8 +128,15 @@ async function configureIndexes() {
   await client.setSettings({
     indexName: 'models',
     indexSettings: {
-      searchableAttributes: ['title', 'short_description', 'provider', 'model_type', 'tags'],
-      attributesForFaceting: ['filterOnly(type)', 'provider', 'model_type', 'is_open_source', 'pricing_model', 'tags']
+      searchableAttributes: ['title', 'short_description', 'provider', 'model_type', 'tags', 'avelix_tags', 'avelix_category'],
+      attributesForFaceting: [
+        'filterOnly(type)', 'provider', 'model_type', 'is_open_source', 'pricing_model', 'tags',
+        'avelix_category', 'pricing_tier_label', 'has_free_tier', 'avg_response_latency',
+        'popularity_tier', 'avelix_featured', 'release_year', 'provider_country', 'modality',
+        'vision_support', 'audio_support', 'tool_use_support', 'fine_tuning_support',
+        'rag_suitability', 'enterprise_ready',
+      ],
+      customRanking: ['desc(avelix_featured)', 'desc(popularity_tier)'],
     }
   })
 

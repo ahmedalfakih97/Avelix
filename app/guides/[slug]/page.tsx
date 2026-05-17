@@ -131,7 +131,7 @@ export default async function GuidePage({ params }: Props) {
             <section className="px-4 py-12 border-b border-terminal-border">
               <SectionLabel>[OUTCOMES]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
-                What You'll Achieve
+                What You&apos;ll Achieve
               </h2>
               {path.goal && (
                 <p className="font-body text-body-lg text-on-surface-variant mb-6">{path.goal}</p>
@@ -247,7 +247,7 @@ export default async function GuidePage({ params }: Props) {
             <section className="px-4 py-12 border-b border-terminal-border">
               <SectionLabel>[RECOMMENDED_MODELS]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
-                AI Models You'll Use
+                AI Models You&apos;ll Use
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-terminal-border border border-terminal-border">
                 {relatedModels.slice(0, 4).map((model) => (
@@ -262,7 +262,7 @@ export default async function GuidePage({ params }: Props) {
             <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
               <SectionLabel>[SKILLS_IN_THIS_PATH]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
-                Skills You'll Develop
+                Skills You&apos;ll Develop
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-terminal-border border border-terminal-border">
                 {relatedSkills.map((s) => (

@@ -8,7 +8,13 @@ import type { ToolFilters } from '@/types/tool'
 
 export const metadata: Metadata = {
   title: 'AI Tools Directory — Find the Right AI Tool',
-  description: 'Browse 200+ AI tools reviewed, categorized, and rated. Filter by use case, pricing, and features.',
+  description: 'Browse 200+ AI tools reviewed, categorized, and rated. Filter by use case, pricing, and features. Find the best AI tool for your specific goal.',
+  alternates: { canonical: '/tools' },
+  openGraph: {
+    title: 'AI Tools Directory | Avelix',
+    description: 'Browse 200+ AI tools reviewed, categorized, and rated. Filter by use case, pricing, and features.',
+    type: 'website',
+  },
 }
 
 interface SearchParams {

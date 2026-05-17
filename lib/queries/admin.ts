@@ -300,20 +300,20 @@ export async function approveQueueItem(
   const now = new Date().toISOString()
 
   // Update queue item — cast needed for Supabase strict TS v2
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Supabase strict TS requires cast — update() infers never on chained queries
   await (supabase.from('approval_queue') as any)
     .update({ status: 'approved', reviewed_by: reviewedBy, reviewed_at: now, decision: 'approved' })
     .eq('id', queueId)
 
   // Publish the content item
   if (contentType === 'tool') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Supabase strict TS requires cast — update() infers never on chained queries
     await (supabase.from('tools') as any).update({ status: 'published', published_at: now }).eq('id', contentId)
   } else if (contentType === 'model') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Supabase strict TS requires cast — update() infers never on chained queries
     await (supabase.from('models') as any).update({ status: 'published', published_at: now }).eq('id', contentId)
   } else if (contentType === 'skill') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Supabase strict TS requires cast — update() infers never on chained queries
     await (supabase.from('skills') as any).update({ status: 'published', published_at: now }).eq('id', contentId)
   }
 }
@@ -328,7 +328,7 @@ export async function rejectQueueItem(
   const { createAdminSupabaseClient } = await import('@/lib/supabase-admin')
   const supabase = createAdminSupabaseClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Supabase strict TS requires cast — update() infers never on chained queries
   await (supabase.from('approval_queue') as any)
     .update({
       status:       'rejected',

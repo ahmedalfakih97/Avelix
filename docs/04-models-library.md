@@ -11,13 +11,15 @@ All pages and components for the AI Models Library and Model Comparison Engine.
 ### `/models` — Models Library Index
 - Server Component: `app/models/page.tsx`
 - Client Component: `components/pages/ModelsLibraryClient.tsx`
-- Filters: provider, model_type, input_type, output_type, pricing, is_open_source, has_api, search, sort
-- All filter state is synced to URL search params (shareable URLs)
+- Filters (21 total): provider, model_type, input_type, output_type, pricing, is_open_source, has_api, search, sort,
+  **+ 13 enriched filters**: avelix_category, pricing_tier_label, has_free_tier, avg_response_latency, popularity_tier, vision_support, audio_support, fine_tuning_support, tool_use_support, provider_country, release_year, context_window_bucket
+- All filter state synced to URL search params (shareable URLs)
 - Mobile filter panel via slide-over overlay
+- Data source: 371 imported models from `ai_models_library_2026_05_16.xlsx` (see `docs/models-import.md`)
 
 ### `/models/[slug]` — Individual Model Page
 - Server Component: `app/models/[slug]/page.tsx`
-- Sections: Hero, Overview, Best For, Technical Specs, Strengths & Weaknesses, Pricing, Similar Models, Example Prompts, Safety Notes
+- Sections: Hero, Overview, **Feature Capabilities**, Best For, Technical Specs, **Benchmarks**, Strengths & Weaknesses, Pricing (**+ tier label, free tier, API prices, budget alternative**), **Integrations**, Similar Models, Example Prompts, Safety & Compliance
 - Static generation via `generateStaticParams()`
 - SEO: `generateMetadata()` with dynamic title/description
 

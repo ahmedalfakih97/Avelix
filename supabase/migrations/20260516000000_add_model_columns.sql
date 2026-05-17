@@ -1,0 +1,43 @@
+-- Migration: Add enriched model columns for the AI Models Library import
+-- Run in Supabase SQL Editor or via: npx supabase db push
+
+ALTER TABLE models ADD COLUMN IF NOT EXISTS avelix_category         TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS avelix_featured         BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS avelix_tags             TEXT[] DEFAULT '{}';
+ALTER TABLE models ADD COLUMN IF NOT EXISTS avelix_data_flags       TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS popularity_tier         TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS model_type_detail       TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS modality                TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS provider_country        TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS model_family            TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS model_version           TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS release_year            INTEGER;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS max_output_tokens       INTEGER;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS parameter_count         TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS has_free_tier           BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS pricing_tier_label      TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS api_input_price_usd_per_1m  NUMERIC;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS api_output_price_usd_per_1m NUMERIC;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS tool_use_support            BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS structured_output_support   BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS json_mode_support           BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS vision_support              BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS audio_support               BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS video_support               BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS image_generation_support    BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS fine_tuning_support         BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS rag_suitability             TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS embedding_support           BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS avg_response_latency        TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS benchmark_results           TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS enterprise_ready            BOOLEAN DEFAULT FALSE;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS safety_features             TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS known_integrations          TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS primary_competitors         TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS similar_cheaper_model       TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS deployment_options          TEXT[] DEFAULT '{}';
+ALTER TABLE models ADD COLUMN IF NOT EXISTS consumer_url                TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS documentation_url           TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS pricing_url                 TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS model_card_url              TEXT;
+ALTER TABLE models ADD COLUMN IF NOT EXISTS github_hf_url               TEXT;

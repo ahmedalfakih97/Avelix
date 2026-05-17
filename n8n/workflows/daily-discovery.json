@@ -1,0 +1,231 @@
+{
+  "name": "Avelix — Daily Discovery",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 6 * * *" }]
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Schedule — 06:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.producthunt.com/v2/api/graphql",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $credentials.producthunt_token }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "{ posts(first: 20, topic: \"artificial-intelligence\", postedAfter: \"{{ $now.minus(1, 'day').startOf('day').toISO() }}\") { edges { node { id name tagline url topics { edges { node { name } } } } } } }"
+            }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000002",
+      "name": "Product Hunt — Today's AI Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 160]
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $input.item.json?.data?.posts?.edges ?? [];\nreturn posts.map(({ node }) => ({\n  json: {\n    title: node.name,\n    description: node.tagline,\n    url: node.url,\n    source: 'product_hunt',\n    source_trust: 0.70,\n    discovered_at: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000003",
+      "name": "Normalize — Product Hunt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 160]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://huggingface.co/api/models",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "sort", "value": "createdAt" },
+            { "name": "limit", "value": "20" },
+            { "name": "filter", "value": "text-generation" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000004",
+      "name": "Hugging Face — New Models",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const models = Array.isArray($input.item.json) ? $input.item.json : [];\nreturn models.map(m => ({\n  json: {\n    title: m.id?.split('/').pop() ?? m.id,\n    description: `${m.pipeline_tag ?? 'text-generation'} model by ${m.id?.split('/')[0] ?? 'unknown'}. ${m.downloads ?? 0} downloads.`,\n    url: `https://huggingface.co/${m.id}`,\n    source: 'huggingface',\n    source_trust: 0.80,\n    discovered_at: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000005",
+      "name": "Normalize — HuggingFace",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/search/repositories",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "q", "value": "AI OR LLM OR agent language:python stars:>50 created:>{{ $now.minus(1, 'day').toFormat('yyyy-MM-dd') }}" },
+            { "name": "sort", "value": "stars" },
+            { "name": "per_page", "value": "10" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github.v3+json" },
+            { "name": "Authorization", "value": "Bearer {{ $credentials.github_token }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000006",
+      "name": "GitHub — New AI Repos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 440]
+    },
+    {
+      "parameters": {
+        "jsCode": "const repos = $input.item.json?.items ?? [];\nreturn repos.map(r => ({\n  json: {\n    title: r.name,\n    description: r.description ?? '',\n    url: r.html_url,\n    source: 'github',\n    source_trust: 0.60,\n    discovered_at: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000007",
+      "name": "Normalize — GitHub",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 440]
+    },
+    {
+      "parameters": {
+        "feedUrls": {
+          "urls": [
+            { "url": "https://openai.com/blog/rss.xml" },
+            { "url": "https://anthropic.com/blog/rss" },
+            { "url": "https://blog.google/technology/ai/rss" },
+            { "url": "https://mistral.ai/news/rss.xml" },
+            { "url": "https://huggingface.co/blog/feed.xml" },
+            { "url": "https://elevenlabs.io/blog/rss" }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000008",
+      "name": "RSS Feeds — Official Blogs",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [480, 580]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = Array.isArray($input.all()) ? $input.all() : [$input.item];\nreturn items.map(i => ({\n  json: {\n    title: i.json.title ?? '',\n    description: i.json.contentSnippet ?? i.json.content ?? '',\n    url: i.json.link ?? i.json.guid ?? '',\n    source: 'official_blog',\n    source_trust: 1.0,\n    discovered_at: i.json.pubDate ?? new Date().toISOString()\n  }\n}));"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000009",
+      "name": "Normalize — RSS Blogs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 580]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByIndex",
+        "options": { "clashHandling": { "values": { "resolveClash": "addSuffix" } } }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000010",
+      "name": "Merge All Discoveries",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [960, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter out items with empty titles or URLs\nconst items = $input.all();\nconst seen = new Set();\nconst filtered = items.filter(i => {\n  const t = (i.json.title ?? '').trim();\n  const u = (i.json.url ?? '').trim();\n  if (!t || !u) return false;\n  // Dedup by URL\n  if (seen.has(u)) return false;\n  seen.add(u);\n  return true;\n});\nreturn filtered;"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000011",
+      "name": "Deduplicate & Filter Empty",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 380]
+    },
+    {
+      "parameters": {
+        "workflowId": "{{ $env.ENRICH_WORKFLOW_ID }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000012",
+      "name": "Execute — Enrich & Queue",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1440, 380]
+    }
+  ],
+  "connections": {
+    "Schedule — 06:00 UTC": {
+      "main": [
+        [
+          { "node": "Product Hunt — Today's AI Posts", "type": "main", "index": 0 },
+          { "node": "Hugging Face — New Models",       "type": "main", "index": 0 },
+          { "node": "GitHub — New AI Repos",           "type": "main", "index": 0 },
+          { "node": "RSS Feeds — Official Blogs",      "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Product Hunt — Today's AI Posts": {
+      "main": [[{ "node": "Normalize — Product Hunt", "type": "main", "index": 0 }]]
+    },
+    "Normalize — Product Hunt": {
+      "main": [[{ "node": "Merge All Discoveries", "type": "main", "index": 0 }]]
+    },
+    "Hugging Face — New Models": {
+      "main": [[{ "node": "Normalize — HuggingFace", "type": "main", "index": 0 }]]
+    },
+    "Normalize — HuggingFace": {
+      "main": [[{ "node": "Merge All Discoveries", "type": "main", "index": 1 }]]
+    },
+    "GitHub — New AI Repos": {
+      "main": [[{ "node": "Normalize — GitHub", "type": "main", "index": 0 }]]
+    },
+    "Normalize — GitHub": {
+      "main": [[{ "node": "Merge All Discoveries", "type": "main", "index": 2 }]]
+    },
+    "RSS Feeds — Official Blogs": {
+      "main": [[{ "node": "Normalize — RSS Blogs", "type": "main", "index": 0 }]]
+    },
+    "Normalize — RSS Blogs": {
+      "main": [[{ "node": "Merge All Discoveries", "type": "main", "index": 3 }]]
+    },
+    "Merge All Discoveries": {
+      "main": [[{ "node": "Deduplicate & Filter Empty", "type": "main", "index": 0 }]]
+    },
+    "Deduplicate & Filter Empty": {
+      "main": [[{ "node": "Execute — Enrich & Queue", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "avelix" }, { "name": "discovery" }]
+}

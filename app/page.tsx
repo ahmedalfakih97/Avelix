@@ -5,6 +5,7 @@ import Footer from '@/components/layout/Footer'
 import ToolCard from '@/components/library/ToolCard'
 import ModelCard from '@/components/library/ModelCard'
 import LearningPathCard from '@/components/library/LearningPathCard'
+import { JsonLd } from '@/components/shared/JsonLd'
 import { getFeaturedTools } from '@/lib/queries/tools'
 import { getRecentModels } from '@/lib/queries/models'
 import { getLearningPaths } from '@/lib/queries/learning-paths'
@@ -121,9 +122,37 @@ export default async function HomePage() {
 
   const previewTerms = glossaryTerms.slice(0, 6)
 
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://avelix.ai/#organization',
+        name: 'Avelix',
+        url: 'https://avelix.ai',
+        description: 'Practical AI learning and discovery platform — AI tools, models, skills, and glossary.',
+        sameAs: ['https://twitter.com/avelix_ai'],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://avelix.ai/#website',
+        url: 'https://avelix.ai',
+        name: 'Avelix',
+        description: 'Navigate the AI Universe.',
+        publisher: { '@id': 'https://avelix.ai/#organization' },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: { '@type': 'EntryPoint', urlTemplate: 'https://avelix.ai/search?q={search_term_string}' },
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    ],
+  }
+
   return (
     <>
       <Header />
+      <JsonLd data={organizationSchema} />
       <main className="pt-16 bg-electromagnetic-ink min-h-screen">
 
         {/* ── Section 1: Hero ── */}
@@ -170,7 +199,7 @@ export default async function HomePage() {
             <div className="border-l-2 border-primary pl-5 py-2">
               <span className="font-mono text-label-caps text-data-dim uppercase block mb-2">01 // SIGNAL</span>
               <h3 className="font-headline text-headline-md text-on-surface uppercase mb-2">Too Many AI Tools</h3>
-              <p className="font-body text-body-sm text-on-surface-variant">New tools launch daily. We review and rank them so you don't have to wade through the noise.</p>
+              <p className="font-body text-body-sm text-on-surface-variant">New tools launch daily. We review and rank them so you don&apos;t have to wade through the noise.</p>
             </div>
             <div className="border-l-2 border-terminal-border pl-5 py-2 hover:border-primary transition-colors">
               <span className="font-mono text-label-caps text-data-dim uppercase block mb-2">02 // CLARITY</span>

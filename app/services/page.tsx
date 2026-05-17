@@ -260,7 +260,7 @@ export default function ServicesPage() {
             {PROBLEM_SOLUTIONS.map((item, i) => (
               <div key={i} className={`border-l-2 pl-5 py-3 ${i === 0 ? 'border-primary' : 'border-terminal-border hover:border-primary transition-colors'}`}>
                 <span className="font-mono text-[9px] text-data-dim uppercase block mb-2">
-                  {String(i + 1).padStart(2, '0')} // PROBLEM
+                  {`${String(i + 1).padStart(2, '0')} // PROBLEM`}
                 </span>
                 <p className="font-body text-body-sm text-on-surface mb-2 italic">{item.problem}</p>
                 <div className="flex items-start gap-2">

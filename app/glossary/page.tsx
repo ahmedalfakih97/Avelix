@@ -5,10 +5,11 @@ import GlossaryIndexClient from '@/components/pages/GlossaryIndexClient'
 import { getAllGlossaryTerms } from '@/lib/queries/glossary'
 
 export const metadata: Metadata = {
-  title: 'AI Glossary — Every AI Term Explained Simply | Avelix',
+  title: 'AI Glossary — Every AI Term Explained Simply',
   description: 'Clear, beginner-friendly definitions for every AI term you will encounter. LLM, RAG, MCP, embeddings, agents, and more — explained without jargon.',
+  alternates: { canonical: '/glossary' },
   openGraph: {
-    title: 'AI Glossary — Every AI Term Explained Simply',
+    title: 'AI Glossary | Avelix',
     description: 'Clear definitions for LLM, RAG, MCP, embeddings, agents, and 30+ more AI terms.',
     type: 'website',
   },

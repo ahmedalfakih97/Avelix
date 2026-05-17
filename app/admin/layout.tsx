@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import AdminSidebar from '@/components/admin/AdminSidebar'
+import SyncTriggerButton from '@/components/admin/SyncTriggerButton'
 import { getAdminStats } from '@/lib/queries/admin'
 
 export const metadata: Metadata = {
@@ -25,17 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               : 'Sync: not configured'}
           </span>
           <div className="flex items-center gap-4">
-            <a
-              href="/api/admin/sync/trigger"
-              className="font-mono text-[9px] text-primary uppercase hover:underline flex items-center gap-1"
-              onClick={(e) => {
-                e.preventDefault()
-                fetch('/api/admin/sync/trigger', { method: 'POST' })
-              }}
-            >
-              <span className="material-symbols-outlined text-[12px]">sync</span>
-              Trigger Sync
-            </a>
+            <SyncTriggerButton variant="link" />
             <span className="font-mono text-[8px] text-data-dim uppercase">
               {stats.queue.pending} pending review
             </span>

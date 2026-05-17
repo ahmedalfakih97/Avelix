@@ -102,7 +102,7 @@ export default function GlossaryIndexClient({ terms }: GlossaryIndexClientProps)
         {letters.length === 0 ? (
           <div className="text-center py-20">
             <span className="material-symbols-outlined text-data-dim text-4xl mb-4 block">search_off</span>
-            <p className="font-mono text-[11px] text-data-dim uppercase">No terms match "{search}"</p>
+            <p className="font-mono text-[11px] text-data-dim uppercase">{`No terms match "${search}"`}</p>
             <button
               onClick={() => setSearch('')}
               className="mt-4 font-mono text-[10px] text-primary uppercase hover:underline"

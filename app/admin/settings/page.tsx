@@ -12,7 +12,7 @@ export default function AdminSettingsPage() {
 
       {/* Sync Settings */}
       <section>
-        <span className="font-mono text-[9px] text-data-dim uppercase block mb-4">// Sync Settings</span>
+        <span className="font-mono text-[9px] text-data-dim uppercase block mb-4">{'// Sync Settings'}</span>
         <div className="border border-terminal-border bg-surface-container-lowest divide-y divide-terminal-border">
           <SettingRow
             label="Sync Frequency"
@@ -57,7 +57,7 @@ export default function AdminSettingsPage() {
 
       {/* Content Rules */}
       <section>
-        <span className="font-mono text-[9px] text-data-dim uppercase block mb-4">// Content Rules</span>
+        <span className="font-mono text-[9px] text-data-dim uppercase block mb-4">{'// Content Rules'}</span>
         <div className="border border-terminal-border bg-surface-container-lowest divide-y divide-terminal-border">
           <SettingRow
             label="Require Source URL"
@@ -89,7 +89,7 @@ export default function AdminSettingsPage() {
 
       {/* Algolia */}
       <section>
-        <span className="font-mono text-[9px] text-data-dim uppercase block mb-4">// Search Index (Algolia)</span>
+        <span className="font-mono text-[9px] text-data-dim uppercase block mb-4">{'// Search Index (Algolia)'}</span>
         <div className="border border-terminal-border bg-surface-container-lowest divide-y divide-terminal-border">
           <SettingRow
             label="Algolia Status"

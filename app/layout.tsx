@@ -25,10 +25,48 @@ const plusJakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: { default: 'Avelix — Navigate the AI Universe', template: '%s | Avelix' },
-  description: 'Find the right AI tool, learn the right skills, understand AI models — without the noise.',
   metadataBase: new URL('https://avelix.ai'),
+  title: {
+    default: 'Avelix — Navigate the AI Universe',
+    template: '%s | Avelix',
+  },
+  description:
+    'Find the right AI tool, learn AI skills, and understand AI models — without the noise. The practical AI learning and discovery platform.',
+  keywords: [
+    'AI tools',
+    'AI models',
+    'AI skills',
+    'artificial intelligence',
+    'AI learning',
+    'AI directory',
+    'best AI tools',
+    'machine learning tools',
+  ],
+  openGraph: {
+    type: 'website',
+    siteName: 'Avelix',
+    locale: 'en_US',
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'Avelix — Navigate the AI Universe' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@avelix_ai',
+    creator: '@avelix_ai',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: { icon: '/logo.png' },
+  alternates: {
+    canonical: 'https://avelix.ai',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

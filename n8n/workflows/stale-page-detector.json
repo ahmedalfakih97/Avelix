@@ -1,0 +1,144 @@
+{
+  "name": "Avelix — Stale Page Detector",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * 0" }]
+        }
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000001",
+      "name": "Schedule — Sunday 08:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 380]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tools",
+        "returnAll": true,
+        "filterByFormula": "AND(status = 'published', OR(last_reviewed_at IS NULL, last_reviewed_at < NOW() - INTERVAL '30 days'))",
+        "options": { "select": "id,title,slug,last_reviewed_at,source_urls" }
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000002",
+      "name": "Supabase — Stale Tools",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [480, 260]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "models",
+        "returnAll": true,
+        "filterByFormula": "AND(status = 'published', OR(last_reviewed_at IS NULL, last_reviewed_at < NOW() - INTERVAL '30 days'))",
+        "options": { "select": "id,title,slug,last_reviewed_at,source_urls" }
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000003",
+      "name": "Supabase — Stale Models",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [480, 380]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "skills",
+        "returnAll": true,
+        "filterByFormula": "AND(status = 'published', OR(last_reviewed_at IS NULL, last_reviewed_at < NOW() - INTERVAL '30 days'))",
+        "options": { "select": "id,title,slug,last_reviewed_at" }
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000004",
+      "name": "Supabase — Stale Skills",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [480, 500]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByIndex",
+        "options": {}
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000005",
+      "name": "Merge All Stale",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [720, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (items.length === 0) {\n  console.log('[avelix:stale] No stale items found this week.');\n  return [];\n}\nconsole.log(`[avelix:stale] Found ${items.length} stale items.`);\nreturn items;"
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000006",
+      "name": "Log Stale Count",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate how many days since last review\nconst item = $input.item.json;\nconst lastReview = item.last_reviewed_at ? new Date(item.last_reviewed_at) : new Date(0);\nconst ageDays = Math.round((Date.now() - lastReview.getTime()) / (1000 * 60 * 60 * 24));\n\nreturn [{\n  json: {\n    ...item,\n    age_days: ageDays,\n    content_type: item.model_type ? 'model' : item.difficulty ? 'skill' : 'tool',\n    source_url: Array.isArray(item.source_urls) ? item.source_urls[0] : null\n  }\n}];"
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000007",
+      "name": "Enrich with Age",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AVELIX_BASE_URL }}/api/webhooks/sync",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content_type\": \"{{ $json.content_type }}\",\n  \"title\": \"{{ $json.title }}\",\n  \"slug\": \"{{ $json.slug }}\",\n  \"short_description\": \"Content not reviewed in {{ $json.age_days }} days — please verify accuracy.\",\n  \"source_url\": \"{{ $json.source_url }}\",\n  \"ai_confidence\": 75,\n  \"action\": \"update\",\n  \"summary_of_changes\": \"Stale content: not reviewed in {{ $json.age_days }} days. Manual review required.\"\n}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000008",
+      "name": "Queue for Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1440, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconsole.log(`[avelix:stale] Queued ${items.length} stale items for review.`);\nreturn [{ json: { queued_count: items.length, run_at: new Date().toISOString() } }];"
+      },
+      "id": "d4e5f6a7-0004-0004-0004-000000000009",
+      "name": "Summary Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 380]
+    }
+  ],
+  "connections": {
+    "Schedule — Sunday 08:00 UTC": {
+      "main": [
+        [
+          { "node": "Supabase — Stale Tools",  "type": "main", "index": 0 },
+          { "node": "Supabase — Stale Models", "type": "main", "index": 0 },
+          { "node": "Supabase — Stale Skills", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Supabase — Stale Tools":  { "main": [[{ "node": "Merge All Stale", "type": "main", "index": 0 }]] },
+    "Supabase — Stale Models": { "main": [[{ "node": "Merge All Stale", "type": "main", "index": 1 }]] },
+    "Supabase — Stale Skills": { "main": [[{ "node": "Merge All Stale", "type": "main", "index": 2 }]] },
+    "Merge All Stale":  { "main": [[{ "node": "Log Stale Count",   "type": "main", "index": 0 }]] },
+    "Log Stale Count":  { "main": [[{ "node": "Enrich with Age",   "type": "main", "index": 0 }]] },
+    "Enrich with Age":  { "main": [[{ "node": "Queue for Review",  "type": "main", "index": 0 }]] },
+    "Queue for Review": { "main": [[{ "node": "Summary Log",       "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "avelix" }, { "name": "maintenance" }]
+}

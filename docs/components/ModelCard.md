@@ -2,14 +2,21 @@
 
 **File:** `components/library/ModelCard.tsx`
 
+Renders a single AI model entry in the models library grid or compact list.
+
 ## Props
 
 ```typescript
 interface ModelCardProps {
   model: Pick<Model,
+    // Core
     'slug' | 'title' | 'provider' | 'model_type' | 'short_description' |
     'context_window' | 'is_open_source' | 'has_api' | 'speed' | 'best_for' |
-    'pricing_model' | 'current_status' | 'input_types' | 'output_types'
+    'pricing_model' | 'current_status' | 'input_types' | 'output_types' |
+    // Enriched (all optional — gracefully hidden if absent)
+    'avelix_category' | 'pricing_tier_label' | 'has_free_tier' |
+    'avg_response_latency' | 'avelix_featured' | 'popularity_tier' |
+    'vision_support' | 'audio_support' | 'modality'
   >
   variant?: 'default' | 'compact' | 'featured'
 }
@@ -17,29 +24,44 @@ interface ModelCardProps {
 
 ## Variants
 
-### `default`
-Full card with: provider icon + abbr, model-type badge, status badge, title, description, spec badges (context, speed, open-source, api), input→output type strip.
+| Variant | Use Case | Layout |
+|---------|----------|--------|
+| `default` | Models library grid | Full card with all badges |
+| `compact` | Related items, sidebars | Single row with icon, title, CTX |
 
-### `compact`
-Minimal row: icon, title, provider, context window. Used in related-items lists and sidebars.
+## Visual Elements
 
-### `featured`
-Falls back to `default` (same layout, reserved for future differentiation).
+### Overlay Badges (top-right, conditional)
+- `avelix_featured: true` → `★ FEATURED` chip (teal border)
+- `popularity_tier === 'Trending'` → `↑ TRENDING` chip (signal-orange border)
 
-## Design Patterns
-- `hover:border-l-2 hover:border-l-primary` — left border accent on hover
-- `hover:bg-surface-container-low` — subtle background lift on hover
-- All text: `font-mono uppercase` for metadata, `font-headline uppercase` for title
-- Provider abbreviation: `PROVIDER_ABBR` map (OAI, ANT, GGL, META, MST, STA, COH)
-- Context window formatting: `formatCtx()` — 128000 → "128K", 1000000 → "1M"
-- Uses `SpecBadge` for all badge types
+### Category Chip
+- `avelix_category` → teal-tinted monospace pill below header
+- Visible only when present
 
-## Usage
+### Spec Row
+- **Response latency** → `FAST` / `MED` / `SLOW` with color coding (teal/amber/rose); falls back to SpecBadge speed if absent
+- **FREE TIER** → teal-bordered chip (shown if `has_free_tier: true`)
 
-```tsx
-// In a grid
-<ModelCard model={model} variant="default" />
+### Pricing Tier Colors
+- Free / Open Source / Free → teal
+- Budget → emerald
+- Mid-Range → amber
+- Premium → rose
+- Unknown → hidden
 
-// In a sidebar/list
-<ModelCard model={model} variant="compact" />
-```
+### Modality Icons (14px Material Symbols)
+- `vision_support` → `visibility`
+- `audio_support` → `volume_up`
+
+## Design Tokens Used
+
+| Token | Purpose |
+|-------|---------|
+| `bg-electromagnetic-ink` | Card background |
+| `border-terminal-border` | Card border |
+| `hover:border-l-2 hover:border-l-primary` | Left accent on hover |
+| `text-primary` (#00D4B4) | Featured/free tier chips |
+| `text-signal-orange` | Trending chip |
+
+Zero border radius everywhere. Material Symbols Outlined only.

@@ -8,6 +8,8 @@ import LearningStep from '@/components/shared/LearningStep'
 import SkillCard from '@/components/library/SkillCard'
 import ToolCard from '@/components/library/ToolCard'
 import ModelCard from '@/components/library/ModelCard'
+import { JsonLd } from '@/components/shared/JsonLd'
+import { Breadcrumbs } from '@/components/shared/Breadcrumbs'
 import {
   getSkillBySlug,
   getPublishedSkillSlugs,
@@ -29,13 +31,22 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const skill = await getSkillBySlug(params.slug)
   if (!skill) return {}
+  const ogImageUrl = `/api/og/skill?slug=${skill.slug}`
   return {
-    title: `How to ${skill.title} with AI — Step-by-Step Guide | Avelix`,
-    description: skill.short_description,
+    title: `How to ${skill.title} with AI — Step-by-Step Guide`,
+    description: `Learn ${skill.title}. ${skill.who_should_learn ?? skill.short_description} Estimated time: ${skill.estimated_hours ?? '?'} hours.`,
+    alternates: { canonical: `/skills/${skill.slug}` },
     openGraph: {
-      title: skill.title,
+      title: `How to ${skill.title} with AI`,
       description: skill.short_description,
       type: 'article',
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `How to ${skill.title}` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `How to ${skill.title} with AI`,
+      description: skill.short_description,
+      images: [ogImageUrl],
     },
   }
 }
@@ -60,6 +71,37 @@ function DividerLabel({ children }: { children: string }) {
   )
 }
 
+function buildSkillSchema(skill: {
+  title: string
+  slug: string
+  short_description: string
+  estimated_hours?: number
+  difficulty: string
+  learning_steps: { step: number; title: string; description: string; duration_hours?: number }[]
+  last_reviewed_at?: string | null
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: `How to ${skill.title} with AI`,
+    description: skill.short_description,
+    url: `https://avelix.ai/skills/${skill.slug}`,
+    ...(skill.estimated_hours
+      ? { totalTime: `PT${skill.estimated_hours}H` }
+      : {}),
+    tool: { '@type': 'HowToTool', name: 'AI Tools' },
+    step: skill.learning_steps.map((s) => ({
+      '@type': 'HowToStep',
+      position: s.step,
+      name: s.title,
+      text: s.description,
+      ...(s.duration_hours ? { timeRequired: `PT${s.duration_hours}H` } : {}),
+    })),
+    ...(skill.last_reviewed_at ? { dateModified: skill.last_reviewed_at } : {}),
+    author: { '@type': 'Organization', name: 'Avelix', url: 'https://avelix.ai' },
+  }
+}
+
 export default async function SkillPage({ params }: Props) {
   const skill = await getSkillBySlug(params.slug)
   if (!skill) notFound()
@@ -74,21 +116,26 @@ export default async function SkillPage({ params }: Props) {
   ])
 
   const steps = Array.isArray(skill.learning_steps) ? skill.learning_steps : []
+  const skillSchema = buildSkillSchema({ ...skill, learning_steps: steps })
 
   return (
     <>
       <Header />
+      <JsonLd data={skillSchema} />
       <main className="pt-16 bg-electromagnetic-ink min-h-screen">
 
         {/* Hero */}
         <section className="border-b border-terminal-border px-4 py-12 bg-surface-container-lowest">
           <div className="max-w-4xl">
-            <div className="flex items-center gap-2 mb-4">
-              <Link href="/skills" className="font-mono text-[10px] text-data-dim uppercase hover:text-primary transition-colors">
-                [SKILL_MATRIX]
-              </Link>
-              <span className="text-data-dim">/</span>
-              <span className="font-mono text-[10px] text-primary uppercase">{skill.title}</span>
+            <div className="mb-4">
+              <Breadcrumbs
+                crumbs={[
+                  { label: 'Avelix', href: '/' },
+                  { label: 'Skills', href: '/skills' },
+                  { label: skill.difficulty.charAt(0).toUpperCase() + skill.difficulty.slice(1), href: `/skills?difficulty=${skill.difficulty}` },
+                  { label: skill.title },
+                ]}
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -170,7 +217,7 @@ export default async function SkillPage({ params }: Props) {
             <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
               <SectionLabel>[REQUIRED_TOOLS]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
-                Tools You'll Need
+                Tools You&apos;ll Need
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-terminal-border border border-terminal-border mb-6">
                 {requiredTools.map((tool) => (

@@ -1,5 +1,7 @@
 # CLAUDE.md — Avelix Project
 
+Last updated: 2026-05-17
+
 ## Project Overview
 
 **Brand:** Avelix | **Domain:** avelix.ai | **Tagline:** "Navigate the AI Universe."
@@ -173,6 +175,38 @@ published_at, created_at, updated_at, owner, review_notes
 
 Full schema: see `agents/02-database.md`
 
+### skills table — additional fields (new version)
+
+The new Skills Library adds these fields beyond the base schema:
+
+```
+content_type          — 'skills.sh' | 'avelix-original' | 'community'
+install_method_cli    — npx install command string (e.g. npx skills add <name>)
+install_method_manual — GitHub folder URL for manual download
+skill_md_content      — Full SKILL.md file content (text)
+security_audit_badge  — badge label / status string
+security_audit_url    — link to audit report
+avelix_install_count  — integer; tracked on Avelix side only
+related_models        — text[] of model names from the models table
+```
+
+### models table — additional fields (from avelix_models_import.csv)
+
+All columns from the import file are authoritative. Key additions beyond the base schema:
+
+```
+avelix_display_name, avelix_category, avelix_overview, avelix_featured,
+avelix_tags, avelix_data_flags, popularity_tier, confidence_score,
+provider_logo_url, provider_country_norm, model_type_norm, modality_norm,
+open_source_norm, proprietary_model_index, status_norm,
+release_year, parameter_count, max_output_tokens, avg_response_latency,
+has_free_tier, api_input_price_usd_per_1m, api_output_price_usd_per_1m,
+price_summary, price_status, pricing_tier_label, consumer_url,
+similar_cheaper_model, example_prompt_1, example_prompt_2, example_prompt_3
+```
+
+See **## Models Library — Data Schema** for the full 77-column list.
+
 ---
 
 ## Agent Development Workflow
@@ -188,6 +222,11 @@ Each agent file in `/agents/` is a self-contained instruction set for Claude Cod
 ```
 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13
 ```
+
+**Important notes for specific libraries:**
+
+- **Skills Library:** Before touching any file under `app/skills/`, `lib/queries/skills.ts`, or related components — read **## Skills Library — Current State** first. The library is temporarily hidden; changes must not re-expose it unintentionally.
+- **Models Library:** `avelix_models_import.csv` is the source of truth for the models table schema. Any agent working on models must treat the column list in **## Models Library — Data Schema** as authoritative.
 
 ---
 
@@ -225,6 +264,10 @@ N8N_WEBHOOK_SECRET=
 4. No item publishes without `status = approved`
 5. Confidence score below 0.7 → blocked from publishing
 6. Duplicate check runs on `slug` AND `title` before insert
+7. Skills imported from skills.sh start as `status = draft` — never auto-publish
+8. Models with `confidence_score < 0.7` must stay as `status = draft` — blocked from publishing
+9. AI-generated fields (`avelix_overview`, `example_prompt_1/2/3`, enriched capabilities) must be flagged `ai_generated: true` until human-reviewed
+10. Install count for skills (`avelix_install_count`) is tracked on Avelix side only — never pulled live from skills.sh
 
 ---
 
@@ -254,8 +297,8 @@ N8N_WEBHOOK_SECRET=
 
 - [ ] Homepage
 - [ ] Tools Library (list + filter + individual pages)
-- [ ] Models Library (list + filter + individual pages)
-- [ ] Skills Library (list + filter + individual pages)
+- [x] Models Library (list + filter + individual pages) — data imported, 387 models
+- [ ] Skills Library — temporarily hidden, new version in planning
 - [ ] Glossary
 - [ ] Services page
 - [ ] Admin approval queue
@@ -275,6 +318,171 @@ N8N_WEBHOOK_SECRET=
 - [ ] Arabic language support
 - [ ] Newsletter + analytics dashboard
 - [ ] Automated stale-page detection
+
+---
+
+## Skills Library — Current State
+
+**Status: temporarily hidden from public frontend (as of 2026-05-17)**
+
+- `/skills` → 307 temporary redirect to `/models`
+- `/skills/[slug]` pages carry `noindex, nofollow` meta tags
+- Skills removed from main nav, footer, and sitemap
+- 15 skills remain in Supabase with `status = published` — data is intact and untouched
+- Reason for hiding: the current library showed the wrong concept (learnable AI skills). The replacement concept (installable agent skills) is in planning.
+
+**Do not:**
+- Delete `app/skills/` page files
+- Delete or modify any rows in the `skills` table
+- Remove `lib/queries/skills.ts` or related types
+- Re-expose the library in nav/sitemap/sitemap without explicit instruction
+
+**Next step:** See **## Skills Library — New Version (Planned)** for the replacement concept.
+
+---
+
+## Skills Library — New Version (Planned)
+
+The replacement Skills Library is a catalog of installable agent skills, modeled on [skills.sh](https://skills.sh).
+
+### Concept
+
+Users browse and install agent skills — packaged capability units that extend AI agents. Think npm for agent behaviors.
+
+### Content types
+
+| Type | Description |
+|---|---|
+| `skills.sh` | Imported from the skills.sh catalog |
+| `avelix-original` | Created by Avelix admin or AI-drafted + human-reviewed |
+| `community` | Submitted by community members, require admin approval |
+
+### Install methods (per skill)
+
+- **CLI:** `npx skills add <skill-name>`
+- **Manual:** Download the skill folder directly from GitHub
+
+### avelix-labs GitHub org
+
+Not yet created. Placeholder for future CLI publishing of `avelix-original` skills. Do not reference a real URL until the org exists.
+
+### Skill fields (schema additions)
+
+```
+content_type          — 'skills.sh' | 'avelix-original' | 'community'
+install_method_cli    — npx command string
+install_method_manual — GitHub folder URL
+skill_md_content      — Full SKILL.md content
+security_audit_badge  — badge label / status
+security_audit_url    — link to audit report
+avelix_install_count  — integer, tracked on Avelix side only (never pulled from skills.sh)
+related_models        — text[] linking to model names in the models table
+```
+
+### Difficulty levels
+
+`Beginner` | `Developer` | `Advanced`
+
+### avelix_category values (skills)
+
+`Agents` | `Browser` | `Coding` | `Data` | `Design` | `DevOps` | `Marketing` | `Multimodal` | `Product` | `Research` | `Safety` | `Writing`
+
+### Install count logic
+
+- Starting display count = floor(skills.sh count × 0.15)
+- If skills.sh count is 0 → Avelix count stays 0
+- All counts tracked and incremented on Avelix side only
+
+### Content pipeline
+
+1. Crawl and import all skills from skills.sh → `status = draft`
+2. Admin reviews and approves individual skills before publishing
+3. `avelix-original` skills drafted by AI, flagged `ai_generated: true`, human-reviewed before approval
+4. Community submissions enter the approval queue at `status = review`
+
+### Related models
+
+Each skill links to recommended models via a `related_models` field (array of model names from the `models` table). Users navigate: skill → recommended models.
+
+---
+
+## Models Library — Data Schema
+
+### Source files
+
+| File | Description |
+|---|---|
+| `ai_models_library_2026_05_16.xlsx` | Source spreadsheet (Model Library + Model Library 2 sheets + Pricing URL Lookup sheet) |
+| `avelix_models_import.csv` | Processed import file — 387 rows × 77 columns, ready for Supabase |
+
+### Allowed values
+
+**avelix_category:**
+`Language` | `Reasoning` | `Coding` | `Vision` | `Multimodal` | `Audio` | `Video` | `Image Generation` | `Embeddings` | `Agents` | `Safety` | `On-Device`
+
+**pricing_tier_label:**
+`Free` | `Open Source / Free` | `Budget` | `Mid-Range` | `Premium` | `Unknown`
+
+**open_source_norm:**
+`Open Source` | `Closed Source` | `Mixed` | `Unknown`
+
+**status_norm:**
+`Active` | `Legacy` | `Retired` | `Research Preview`
+
+### Data quality rules
+
+- `confidence_score < 0.7` → `status = draft`, blocked from publishing
+- Fields generated by AI (`avelix_overview`, `example_prompt_1/2/3`, enriched capabilities) → `avelix_data_flags` includes `ai_generated:true` until human-reviewed
+
+### Full column list (77 columns)
+
+**Avelix meta:**
+`avelix_slug`, `avelix_display_name`, `avelix_featured`, `avelix_category`, `avelix_tags`, `popularity_tier`, `confidence_score`, `avelix_overview`, `avelix_data_flags`
+
+**Provider:**
+`Provider name`, `provider_logo_url`, `Provider country or region`, `provider_country_norm`
+
+**Model identity:**
+`Model family`, `Model name`, `Model version`, `release_year`, `Release date`, `Latest known version`
+
+**Status / type:**
+`Status`, `status_norm`, `model_type_norm`, `modality_norm`
+
+**Capabilities / I/O:**
+`Input types`, `Output types`, `Context window`, `max_output_tokens`, `parameter_count`, `Supported languages`
+
+**Open source / licensing:**
+`open_source_norm`, `proprietary_model_index`, `License type`
+
+**Access / deployment:**
+`API availability`, `has_free_tier`, `Deployment options`
+
+**URLs:**
+`Official model URL`, `Documentation URL`, `Pricing URL`, `Model card URL`, `GitHub or Hugging Face URL`, `consumer_url`, `Source links`
+
+**Pricing:**
+`price_summary`, `api_input_price_usd_per_1m`, `api_output_price_usd_per_1m`, `price_status`, `pricing_tier_label`, `Cost profile`
+
+**Use cases / positioning:**
+`Key capabilities`, `Limitations`, `Best use cases`, `Not recommended use cases`, `similar_cheaper_model`
+
+**Technical feature flags:**
+`Tool use support`, `Function calling support`, `Structured output support`, `JSON mode support`, `Vision support`, `Audio support`, `Video support`, `Image generation support`, `Fine-tuning support`, `RAG suitability`, `Embedding support`
+
+**Performance:**
+`avg_response_latency`, `Latency profile`, `Benchmark results`
+
+**Enterprise / compliance:**
+`Enterprise readiness`, `Compliance or security notes`, `Safety features`
+
+**Training / ecosystem:**
+`Training data notes`, `Known integrations`, `Primary competitors`
+
+**Example prompts:**
+`example_prompt_1`, `example_prompt_2`, `example_prompt_3`
+
+**Meta:**
+`Last verified date`
 
 ---
 

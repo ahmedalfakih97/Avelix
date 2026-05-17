@@ -1,0 +1,256 @@
+{
+  "name": "Avelix — Enrich & Queue",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b2c3d4e5-0002-0002-0002-000000000001",
+      "name": "Trigger — From Discovery",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [240, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Slugify: lowercase, replace non-alphanumeric with hyphens, collapse hyphens\nfunction slugify(str) {\n  return str\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-|-$/g, '');\n}\n\nconst item = $input.item.json;\nreturn [{\n  json: {\n    ...item,\n    slug: slugify(item.title ?? ''),\n    title_normalized: (item.title ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim()\n  }\n}];"
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000002",
+      "name": "Slugify & Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 380]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tools",
+        "returnAll": false,
+        "limit": 1,
+        "filterByFormula": "OR(slug='{{ $json.slug }}', LOWER(title)='{{ $json.title_normalized }}')",
+        "options": {}
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000003",
+      "name": "Supabase — Check Tools Duplicate",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [720, 260]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "models",
+        "returnAll": false,
+        "limit": 1,
+        "filterByFormula": "OR(slug='{{ $json.slug }}', LOWER(title)='{{ $json.title_normalized }}')",
+        "options": {}
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000004",
+      "name": "Supabase — Check Models Duplicate",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [720, 380]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "approval_queue",
+        "returnAll": false,
+        "limit": 1,
+        "filterByFormula": "AND(content_slug='{{ $json.slug }}', status='pending')",
+        "options": {}
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000005",
+      "name": "Supabase — Check Queue Duplicate",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [720, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Supabase — Check Tools Duplicate').item.json.id || $('Supabase — Check Models Duplicate').item.json.id || $('Supabase — Check Queue Duplicate').item.json.id }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "empty" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000006",
+      "name": "Is New Item?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key",        "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-opus-4-7\",\n  \"max_tokens\": 1024,\n  \"system\": \"You are an AI tool classification specialist for Avelix, a practical AI discovery platform.\\nRespond ONLY in valid JSON. No markdown. No explanation. No code fences.\\nBase ALL content strictly on what is stated in the title and description — do not invent features or pricing.\\nIf you are uncertain about any field, set it to null.\",\n  \"messages\": [{\n    \"role\": \"user\",\n    \"content\": \"Classify this AI discovery:\\nTitle: {{ $json.title }}\\nDescription: {{ $json.description }}\\nURL: {{ $json.url }}\\nSource: {{ $json.source }}\\n\\nReturn JSON with these exact fields:\\n{\\n  \\\"content_type\\\": \\\"tool\\\" | \\\"model\\\" | \\\"skill\\\",\\n  \\\"category\\\": \\\"string — one of: text-generation, image-generation, video-generation, audio-ai, code-ai, productivity, research, business, education\\\",\\n  \\\"tags\\\": [\\\"array\\\", \\\"max 5\\\"],\\n  \\\"use_cases\\\": [\\\"array\\\", \\\"max 4\\\"],\\n  \\\"user_types\\\": [\\\"creator\\\" | \\\"developer\\\" | \\\"business\\\" | \\\"beginner\\\"],\\n  \\\"best_for\\\": [\\\"specific tasks\\\", \\\"max 3\\\"],\\n  \\\"difficulty\\\": \\\"beginner\\\" | \\\"intermediate\\\" | \\\"advanced\\\",\\n  \\\"pricing_model\\\": \\\"free\\\" | \\\"freemium\\\" | \\\"paid\\\" | \\\"open-source\\\",\\n  \\\"has_free_plan\\\": true | false | null,\\n  \\\"has_api\\\": true | false | null,\\n  \\\"short_description\\\": \\\"one clear sentence max 150 chars\\\",\\n  \\\"confidence_score\\\": 0.0 to 1.0,\\n  \\\"is_genuine_ai_tool\\\": true | false,\\n  \\\"classification_notes\\\": \\\"brief reason\\\"\\\n}\"\n  }]\n}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000007",
+      "name": "Claude — Classify & Enrich",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1200, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json;\n// Parse Claude response\nlet classification;\ntry {\n  const content = raw.content?.[0]?.text ?? '{}';\n  classification = JSON.parse(content);\n} catch {\n  return [{ json: { ...raw, _parse_error: true, confidence_score: 0 } }];\n}\n\nreturn [{\n  json: {\n    ...$('Slugify & Normalize').item.json,\n    classification,\n    ai_confidence: Math.round((classification.confidence_score ?? 0) * 100),\n    content_type: classification.content_type ?? 'tool',\n    short_description: classification.short_description ?? '',\n    is_genuine_ai_tool: classification.is_genuine_ai_tool ?? true\n  }\n}];"
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000008",
+      "name": "Parse Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 260]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ai_confidence }}",
+              "rightValue": 50,
+              "operator": { "type": "number", "operation": "gte" }
+            },
+            {
+              "leftValue": "={{ $json.is_genuine_ai_tool }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000009",
+      "name": "Confidence Gate (≥50%)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1680, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log low-confidence rejections for analysis\nconst item = $input.item.json;\nconsole.log(`[avelix:reject] ${item.title} — confidence ${item.ai_confidence}%, genuine: ${item.is_genuine_ai_tool}`);\nreturn [{ json: { rejected: true, title: item.title, reason: 'low_confidence_or_not_genuine', ai_confidence: item.ai_confidence } }];"
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000010",
+      "name": "Log Rejection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AVELIX_BASE_URL }}/api/webhooks/sync",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content_type\": \"{{ $json.content_type }}\",\n  \"title\": \"{{ $json.title }}\",\n  \"slug\": \"{{ $json.slug }}\",\n  \"short_description\": \"{{ $json.short_description }}\",\n  \"source_url\": \"{{ $json.url }}\",\n  \"ai_confidence\": {{ $json.ai_confidence }},\n  \"action\": \"create\",\n  \"data\": {\n    \"tags\": {{ JSON.stringify($json.classification?.tags ?? []) }},\n    \"use_cases\": {{ JSON.stringify($json.classification?.use_cases ?? []) }},\n    \"pricing_model\": \"{{ $json.classification?.pricing_model }}\",\n    \"has_free_plan\": {{ $json.classification?.has_free_plan ?? false }},\n    \"has_api\": {{ $json.classification?.has_api ?? false }},\n    \"difficulty\": \"{{ $json.classification?.difficulty ?? 'beginner' }}\"\n  }\n}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000011",
+      "name": "POST — Avelix Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1920, 160]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect results for the summary notification\nconst items = $input.all();\nconst queued = items\n  .filter(i => i.json.success)\n  .map(i => ({\n    title: i.json.item?.title ?? '',\n    content_type: i.json.item?.content_type ?? 'tool',\n    slug: i.json.item?.slug ?? '',\n    ai_confidence: i.json.item?.ai_confidence ?? 0,\n    action: 'create'\n  }));\nconst rejectedItems = $('Log Rejection').all();\nreturn [{\n  json: {\n    queued,\n    rejected_count: rejectedItems.length,\n    run_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000012",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AVELIX_BASE_URL }}/api/admin/notify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
+            { "name": "Content-Type",      "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "b2c3d4e5-0002-0002-0002-000000000013",
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2400, 260]
+    }
+  ],
+  "connections": {
+    "Trigger — From Discovery": {
+      "main": [[{ "node": "Slugify & Normalize", "type": "main", "index": 0 }]]
+    },
+    "Slugify & Normalize": {
+      "main": [
+        [
+          { "node": "Supabase — Check Tools Duplicate", "type": "main", "index": 0 },
+          { "node": "Supabase — Check Models Duplicate", "type": "main", "index": 0 },
+          { "node": "Supabase — Check Queue Duplicate",  "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Supabase — Check Tools Duplicate":  { "main": [[{ "node": "Is New Item?", "type": "main", "index": 0 }]] },
+    "Supabase — Check Models Duplicate": { "main": [[{ "node": "Is New Item?", "type": "main", "index": 0 }]] },
+    "Supabase — Check Queue Duplicate":  { "main": [[{ "node": "Is New Item?", "type": "main", "index": 0 }]] },
+    "Is New Item?": {
+      "main": [
+        [{ "node": "Claude — Classify & Enrich", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Claude — Classify & Enrich": {
+      "main": [[{ "node": "Parse Claude Response", "type": "main", "index": 0 }]]
+    },
+    "Parse Claude Response": {
+      "main": [[{ "node": "Confidence Gate (≥50%)", "type": "main", "index": 0 }]]
+    },
+    "Confidence Gate (≥50%)": {
+      "main": [
+        [{ "node": "POST — Avelix Webhook", "type": "main", "index": 0 }],
+        [{ "node": "Log Rejection",         "type": "main", "index": 0 }]
+      ]
+    },
+    "POST — Avelix Webhook": {
+      "main": [[{ "node": "Build Summary", "type": "main", "index": 0 }]]
+    },
+    "Log Rejection": {
+      "main": [[{ "node": "Build Summary", "type": "main", "index": 0 }]]
+    },
+    "Build Summary": {
+      "main": [[{ "node": "Notify Admin", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "avelix" }, { "name": "enrichment" }]
+}

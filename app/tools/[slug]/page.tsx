@@ -6,6 +6,8 @@ import Footer from '@/components/layout/Footer'
 import CTABlock from '@/components/shared/CTABlock'
 import RelatedItems from '@/components/shared/RelatedItems'
 import CopyButton from '@/components/shared/CopyButton'
+import { JsonLd } from '@/components/shared/JsonLd'
+import { Breadcrumbs } from '@/components/shared/Breadcrumbs'
 import { getToolBySlug, getPublishedToolSlugs, getRelatedTools } from '@/lib/queries/tools'
 import { formatDate } from '@/lib/utils'
 
@@ -21,13 +23,23 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tool = await getToolBySlug(params.slug)
   if (!tool) return {}
+  const ogImageUrl = `/api/og/tool?slug=${tool.slug}`
   return {
-    title: `${tool.title} Review — ${tool.best_for[0] ?? tool.category_name} | Avelix`,
-    description: tool.short_description,
+    title: `${tool.title} — ${tool.best_for[0] ?? tool.category_name} AI Tool Review`,
+    description: `${tool.short_description} Pricing, features, pros & cons, and alternatives.`,
+    alternates: { canonical: `/tools/${tool.slug}` },
     openGraph: {
       title: tool.title,
       description: tool.short_description,
-      type: 'website',
+      type: 'article',
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: tool.title }],
+      modifiedTime: tool.last_reviewed_at ?? undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: tool.title,
+      description: tool.short_description,
+      images: [ogImageUrl],
     },
   }
 }
@@ -67,6 +79,44 @@ function SectionLabel({ children }: { children: string }) {
   )
 }
 
+function buildToolSchema(tool: {
+  title: string
+  slug: string
+  short_description: string
+  website_url?: string
+  avelix_rating?: number
+  has_free_plan: boolean
+  last_reviewed_at?: string | null
+  category_name?: string | null
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: tool.title,
+    description: tool.short_description,
+    applicationCategory: 'ArtificialIntelligenceApplication',
+    applicationSubCategory: tool.category_name ?? undefined,
+    url: `https://avelix.ai/tools/${tool.slug}`,
+    ...(tool.website_url ? { sameAs: tool.website_url } : {}),
+    offers: tool.has_free_plan
+      ? { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'Free plan available' }
+      : undefined,
+    ...(tool.last_reviewed_at ? { dateModified: tool.last_reviewed_at } : {}),
+    ...(tool.avelix_rating
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: tool.avelix_rating,
+            bestRating: 5,
+            worstRating: 1,
+            ratingCount: 1,
+          },
+        }
+      : {}),
+    author: { '@type': 'Organization', name: 'Avelix', url: 'https://avelix.ai' },
+  }
+}
+
 export default async function ToolPage({ params }: Props) {
   const tool = await getToolBySlug(params.slug)
   if (!tool) notFound()
@@ -75,21 +125,26 @@ export default async function ToolPage({ params }: Props) {
 
   const rating = tool.avelix_rating ?? 0
   const stars = Array.from({ length: 5 }, (_, i) => i < Math.round(rating))
+  const toolSchema = buildToolSchema(tool)
 
   return (
     <>
       <Header />
+      <JsonLd data={toolSchema} />
       <main className="pt-16 bg-electromagnetic-ink min-h-screen">
 
         {/* Hero */}
         <section className="border-b border-terminal-border px-4 py-12 bg-surface-container-lowest">
           <div className="max-w-4xl">
-            <div className="flex items-center gap-2 mb-4">
-              <Link href="/tools" className="font-mono text-[10px] text-data-dim uppercase hover:text-primary transition-colors">
-                [TOOL_DIRECTORY]
-              </Link>
-              <span className="text-data-dim">/</span>
-              <span className="font-mono text-[10px] text-primary uppercase">{tool.title}</span>
+            <div className="mb-4">
+              <Breadcrumbs
+                crumbs={[
+                  { label: 'Avelix', href: '/' },
+                  { label: 'Tools', href: '/tools' },
+                  { label: tool.category_name ?? 'AI Tool', href: `/tools?category=${tool.category_id ?? ''}` },
+                  { label: tool.title },
+                ]}
+              />
             </div>
 
             <div className="flex items-start gap-4 mb-6">

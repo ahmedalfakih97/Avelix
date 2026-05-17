@@ -6,6 +6,8 @@ import Footer from '@/components/layout/Footer'
 import CTABlock from '@/components/shared/CTABlock'
 import SpecBadge from '@/components/shared/SpecBadge'
 import CopyButton from '@/components/shared/CopyButton'
+import { JsonLd } from '@/components/shared/JsonLd'
+import { Breadcrumbs } from '@/components/shared/Breadcrumbs'
 import { getModelBySlug, getPublishedModelSlugs, getRelatedModels } from '@/lib/queries/models'
 import { formatDate } from '@/lib/utils'
 
@@ -21,13 +23,22 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getModelBySlug(params.slug)
   if (!model) return {}
+  const ogImageUrl = `/api/og/model?slug=${model.slug}`
   return {
-    title: `${model.title} by ${model.provider} — Use Cases, Pricing & Review | Avelix`,
-    description: model.short_description,
+    title: `${model.title} by ${model.provider} — Capabilities, Pricing & Use Cases`,
+    description: `${model.short_description} Context window, strengths, weaknesses, and best use cases.`,
+    alternates: { canonical: `/models/${model.slug}` },
     openGraph: {
       title: `${model.title} by ${model.provider}`,
       description: model.short_description,
       type: 'article',
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `${model.title} by ${model.provider}` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${model.title} by ${model.provider}`,
+      description: model.short_description,
+      images: [ogImageUrl],
     },
   }
 }
@@ -56,10 +67,16 @@ const BEST_FOR_ICON: Record<string, string> = {
   general:    'all_inclusive',
 }
 
+const PRICING_TIER_COLOR: Record<string, string> = {
+  'Free':               'text-primary border-primary/40',
+  'Open Source / Free': 'text-primary border-primary/40',
+  'Budget':             'text-emerald-400 border-emerald-400/40',
+  'Mid-Range':          'text-amber-400 border-amber-400/40',
+  'Premium':            'text-rose-400 border-rose-400/40',
+}
+
 function SectionLabel({ children }: { children: string }) {
-  return (
-    <p className="font-mono text-label-caps text-primary uppercase mb-4">{children}</p>
-  )
+  return <p className="font-mono text-label-caps text-primary uppercase mb-4">{children}</p>
 }
 
 function formatCtx(n?: number): string {
@@ -68,27 +85,90 @@ function formatCtx(n?: number): string {
   return `${(n / 1000).toFixed(0)}K`
 }
 
+function SpecCell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-electromagnetic-ink p-4">
+      <p className="font-mono text-[9px] text-data-dim uppercase mb-1">{label}</p>
+      {children}
+    </div>
+  )
+}
+
+function FeatureChip({ label, active }: { label: string; active: boolean }) {
+  return (
+    <span className={`font-mono text-[8px] uppercase border px-2 py-1 ${
+      active ? 'border-primary text-primary bg-primary/5' : 'border-terminal-border text-data-dim'
+    }`}>
+      {active ? '✓ ' : '✗ '}{label}
+    </span>
+  )
+}
+
+function buildModelSchema(model: {
+  title: string
+  slug: string
+  short_description: string
+  provider: string
+  model_type: string
+  last_reviewed_at?: string | null
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: model.title,
+    description: model.short_description,
+    applicationCategory: 'ArtificialIntelligenceApplication',
+    applicationSubCategory: model.model_type,
+    url: `https://avelix.ai/models/${model.slug}`,
+    author: { '@type': 'Organization', name: model.provider },
+    publisher: { '@type': 'Organization', name: 'Avelix', url: 'https://avelix.ai' },
+    ...(model.last_reviewed_at ? { dateModified: model.last_reviewed_at } : {}),
+  }
+}
+
 export default async function ModelPage({ params }: Props) {
   const model = await getModelBySlug(params.slug)
   if (!model) notFound()
 
   const relatedModels = await getRelatedModels(model.related_model_slugs)
   const icon = MODEL_TYPE_ICON[model.model_type] ?? 'dataset'
+  const modelSchema = buildModelSchema(model)
+
+  // Parse pipe-separated benchmark string into key-value pairs
+  const benchmarks: [string, string][] = model.benchmark_results
+    ? model.benchmark_results.split('|').map(s => {
+        const [k, ...v] = s.split(':')
+        return [k?.trim() ?? '', v.join(':').trim()] as [string, string]
+      }).filter(([k]) => k)
+    : []
+
+  // Parse integrations string
+  const integrations: string[] = model.known_integrations
+    ? model.known_integrations.split(',').map(s => s.trim()).filter(Boolean)
+    : []
+
+  const tierCls = model.pricing_tier_label
+    ? (PRICING_TIER_COLOR[model.pricing_tier_label] ?? 'text-data-dim border-terminal-border')
+    : ''
 
   return (
     <>
       <Header />
+      <JsonLd data={modelSchema} />
       <main className="pt-16 bg-electromagnetic-ink min-h-screen">
 
         {/* Hero */}
         <section className="border-b border-terminal-border px-4 py-12 bg-surface-container-lowest">
           <div className="max-w-4xl">
-            <div className="flex items-center gap-2 mb-4">
-              <Link href="/models" className="font-mono text-[10px] text-data-dim uppercase hover:text-primary transition-colors">
-                [MODEL_INDEX]
-              </Link>
-              <span className="text-data-dim">/</span>
-              <span className="font-mono text-[10px] text-primary uppercase">{model.title}</span>
+            <div className="mb-4">
+              <Breadcrumbs
+                crumbs={[
+                  { label: 'Avelix', href: '/' },
+                  { label: 'Models', href: '/models' },
+                  { label: model.provider, href: `/models?provider=${encodeURIComponent(model.provider)}` },
+                  { label: model.title },
+                ]}
+              />
             </div>
 
             <div className="flex items-start gap-4 mb-6">
@@ -96,10 +176,18 @@ export default async function ModelPage({ params }: Props) {
                 <span className="material-symbols-outlined text-on-surface-variant text-2xl">{icon}</span>
               </div>
               <div>
-                <p className="font-mono text-[10px] text-data-dim uppercase mb-1">{model.provider}</p>
+                <p className="font-mono text-[10px] text-data-dim uppercase mb-1">
+                  {model.provider}
+                  {model.provider_country && ` · ${model.provider_country}`}
+                </p>
                 <h1 className="font-headline text-display-lg text-on-surface uppercase leading-none">
                   {model.title}
                 </h1>
+                {model.avelix_category && (
+                  <span className="font-mono text-[8px] text-primary/80 uppercase border border-primary/20 bg-primary/5 px-1.5 py-0.5 mt-1 inline-block">
+                    {model.avelix_category}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -107,15 +195,56 @@ export default async function ModelPage({ params }: Props) {
               {model.short_description}
             </p>
 
-            <div className="flex flex-wrap items-center gap-2 mb-6">
+            {/* Badge row */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
               <SpecBadge type="model-type" value={model.model_type} />
               <SpecBadge type="status" value={model.current_status} />
-              <SpecBadge type="speed" value={model.speed} />
+              {model.avg_response_latency ? (
+                <span className="font-mono text-[8px] uppercase border border-terminal-border px-1.5 py-0.5 text-on-surface-variant">
+                  {model.avg_response_latency}
+                </span>
+              ) : (
+                <SpecBadge type="speed" value={model.speed} />
+              )}
               {model.context_window && (
                 <SpecBadge type="context" value={String(model.context_window)} />
               )}
               {model.is_open_source && <SpecBadge type="open-source" value="true" />}
               {model.has_api && <SpecBadge type="api" value="true" />}
+              {model.avelix_featured && (
+                <span className="font-mono text-[8px] text-primary uppercase border border-primary/40 px-1.5 py-0.5">★ FEATURED</span>
+              )}
+              {model.popularity_tier === 'Trending' && (
+                <span className="font-mono text-[8px] text-signal-orange uppercase border border-signal-orange/40 px-1.5 py-0.5">↑ TRENDING</span>
+              )}
+            </div>
+
+            {/* Quick spec row */}
+            <div className="flex flex-wrap gap-4 mb-6">
+              {model.parameter_count && (
+                <div>
+                  <span className="font-mono text-[8px] text-data-dim uppercase block">PARAMS</span>
+                  <span className="font-mono text-[11px] text-on-surface">{model.parameter_count}</span>
+                </div>
+              )}
+              {model.max_output_tokens && (
+                <div>
+                  <span className="font-mono text-[8px] text-data-dim uppercase block">MAX_OUTPUT</span>
+                  <span className="font-mono text-[11px] text-on-surface">{formatCtx(model.max_output_tokens)} tokens</span>
+                </div>
+              )}
+              {model.modality && (
+                <div>
+                  <span className="font-mono text-[8px] text-data-dim uppercase block">MODALITY</span>
+                  <span className="font-mono text-[11px] text-on-surface">{model.modality}</span>
+                </div>
+              )}
+              {model.release_year && (
+                <div>
+                  <span className="font-mono text-[8px] text-data-dim uppercase block">RELEASE</span>
+                  <span className="font-mono text-[11px] text-on-surface">{model.release_year}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -131,6 +260,16 @@ export default async function ModelPage({ params }: Props) {
                   <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:text-electromagnetic-ink transition-opacity duration-300 z-20 font-mono text-[11px] uppercase">
                     View Official Docs →
                   </span>
+                </a>
+              )}
+              {model.consumer_url && (
+                <a
+                  href={model.consumer_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border border-terminal-border text-on-surface font-mono text-[11px] py-3 px-6 uppercase hover:border-primary transition-all"
+                >
+                  Try It →
                 </a>
               )}
               <Link
@@ -158,7 +297,7 @@ export default async function ModelPage({ params }: Props) {
 
         <div className="max-w-4xl mx-auto">
 
-          {/* What is it */}
+          {/* Overview */}
           {model.long_description && (
             <section className="px-4 py-12 border-b border-terminal-border">
               <SectionLabel>[OVERVIEW]</SectionLabel>
@@ -169,13 +308,39 @@ export default async function ModelPage({ params }: Props) {
             </section>
           )}
 
+          {/* Feature Capabilities */}
+          <section className="px-4 py-12 border-b border-terminal-border">
+            <SectionLabel>[CAPABILITIES]</SectionLabel>
+            <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
+              Feature Capabilities
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              <FeatureChip label="Vision"            active={!!model.vision_support} />
+              <FeatureChip label="Audio"             active={!!model.audio_support} />
+              <FeatureChip label="Video"             active={!!model.video_support} />
+              <FeatureChip label="Image Gen"         active={!!model.image_generation_support} />
+              <FeatureChip label="Tool Use"          active={!!model.tool_use_support} />
+              <FeatureChip label="Fine-Tuning"       active={!!model.fine_tuning_support} />
+              <FeatureChip label="JSON Mode"         active={!!model.json_mode_support} />
+              <FeatureChip label="Structured Output" active={!!model.structured_output_support} />
+              <FeatureChip label="Embeddings"        active={!!model.embedding_support} />
+              <FeatureChip label="Enterprise"        active={!!model.enterprise_ready} />
+              <FeatureChip label="API Access"        active={model.has_api} />
+              <FeatureChip label="Open Source"       active={model.is_open_source} />
+            </div>
+            {model.rag_suitability && (
+              <div className="mt-4 flex items-center gap-2">
+                <span className="font-mono text-[9px] text-data-dim uppercase">RAG_SUITABILITY:</span>
+                <span className="font-mono text-[9px] text-on-surface uppercase">{model.rag_suitability}</span>
+              </div>
+            )}
+          </section>
+
           {/* Best For */}
           {model.best_for.length > 0 && (
             <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
               <SectionLabel>[USE_CASES]</SectionLabel>
-              <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
-                Best For
-              </h2>
+              <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">Best For</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-terminal-border border border-terminal-border">
                 {model.best_for.map((useCase, i) => {
                   const ucKey = useCase.toLowerCase().split(' ')[0]
@@ -212,50 +377,73 @@ export default async function ModelPage({ params }: Props) {
               Technical Specifications
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-terminal-border border border-terminal-border">
-              <div className="bg-electromagnetic-ink p-4">
-                <p className="font-mono text-[9px] text-data-dim uppercase mb-1">CONTEXT_WINDOW</p>
+              <SpecCell label="CONTEXT_WINDOW">
                 <p className="font-mono text-[13px] text-on-surface">
-                  {model.context_window
-                    ? `${formatCtx(model.context_window)} tokens`
-                    : '—'}
+                  {model.context_window ? `${formatCtx(model.context_window)} tokens` : '—'}
                 </p>
                 {model.context_window && (
                   <p className="font-body text-[11px] text-on-surface-variant mt-1">
-                    Can process ~{Math.round(model.context_window * 0.75).toLocaleString()} words at once
+                    ~{Math.round(model.context_window * 0.75).toLocaleString()} words
                   </p>
                 )}
-              </div>
-              <div className="bg-electromagnetic-ink p-4">
-                <p className="font-mono text-[9px] text-data-dim uppercase mb-1">SPEED</p>
-                <SpecBadge type="speed" value={model.speed} />
-                {model.speed_notes && (
-                  <p className="font-body text-[11px] text-on-surface-variant mt-2">{model.speed_notes}</p>
+              </SpecCell>
+
+              <SpecCell label="MAX_OUTPUT">
+                <p className="font-mono text-[13px] text-on-surface">
+                  {model.max_output_tokens ? `${formatCtx(model.max_output_tokens)} tokens` : '—'}
+                </p>
+              </SpecCell>
+
+              <SpecCell label="RESPONSE_SPEED">
+                {model.avg_response_latency ? (
+                  <p className="font-mono text-[11px] text-on-surface">{model.avg_response_latency}</p>
+                ) : (
+                  <SpecBadge type="speed" value={model.speed} />
                 )}
-              </div>
-              <div className="bg-electromagnetic-ink p-4">
-                <p className="font-mono text-[9px] text-data-dim uppercase mb-2">INPUT_TYPES</p>
+                {model.speed_notes && (
+                  <p className="font-body text-[11px] text-on-surface-variant mt-1">{model.speed_notes}</p>
+                )}
+              </SpecCell>
+
+              <SpecCell label="PARAMETER_COUNT">
+                <p className="font-mono text-[13px] text-on-surface">{model.parameter_count ?? '—'}</p>
+              </SpecCell>
+
+              <SpecCell label="INPUT_TYPES">
                 <div className="flex flex-wrap gap-1">
-                  {model.input_types.map((t) => (
-                    <SpecBadge key={t} type="input" value={t} />
-                  ))}
+                  {model.input_types.map((t) => <SpecBadge key={t} type="input" value={t} />)}
                 </div>
-              </div>
-              <div className="bg-electromagnetic-ink p-4">
-                <p className="font-mono text-[9px] text-data-dim uppercase mb-2">OUTPUT_TYPES</p>
+              </SpecCell>
+
+              <SpecCell label="OUTPUT_TYPES">
                 <div className="flex flex-wrap gap-1">
-                  {model.output_types.map((t) => (
-                    <SpecBadge key={t} type="output" value={t} />
-                  ))}
+                  {model.output_types.map((t) => <SpecBadge key={t} type="output" value={t} />)}
                 </div>
-              </div>
-              <div className="bg-electromagnetic-ink p-4">
-                <p className="font-mono text-[9px] text-data-dim uppercase mb-2">OPEN_SOURCE</p>
+              </SpecCell>
+
+              <SpecCell label="MODALITY">
+                <p className="font-mono text-[11px] text-on-surface">{model.modality ?? '—'}</p>
+              </SpecCell>
+
+              <SpecCell label="DEPLOYMENT">
+                {model.deployment_options && model.deployment_options.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {model.deployment_options.map((d) => (
+                      <span key={d} className="font-mono text-[8px] text-on-surface-variant border border-terminal-border px-1.5 py-0.5 uppercase">{d}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="font-mono text-[11px] text-data-dim">—</p>
+                )}
+              </SpecCell>
+
+              <SpecCell label="OPEN_SOURCE">
                 <SpecBadge type="open-source" value={model.is_open_source ? 'true' : 'false'} />
-              </div>
-              <div className="bg-electromagnetic-ink p-4">
-                <p className="font-mono text-[9px] text-data-dim uppercase mb-2">API_ACCESS</p>
+              </SpecCell>
+
+              <SpecCell label="API_ACCESS">
                 <SpecBadge type="api" value={model.has_api ? 'true' : 'false'} />
-              </div>
+              </SpecCell>
             </div>
             {model.quality_notes && (
               <div className="mt-4 border-l-2 border-primary pl-4">
@@ -265,18 +453,34 @@ export default async function ModelPage({ params }: Props) {
             )}
           </section>
 
+          {/* Benchmarks */}
+          {benchmarks.length > 0 && (
+            <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
+              <SectionLabel>[BENCHMARKS]</SectionLabel>
+              <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
+                Benchmark Results
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-terminal-border border border-terminal-border">
+                {benchmarks.map(([name, score]) => (
+                  <div key={name} className="bg-electromagnetic-ink p-4">
+                    <p className="font-mono text-[9px] text-data-dim uppercase mb-1">{name}</p>
+                    <p className="font-mono text-[15px] text-primary">{score}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Strengths & Weaknesses */}
           {(model.strengths.length > 0 || model.weaknesses.length > 0) && (
-            <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
+            <section className="px-4 py-12 border-b border-terminal-border">
               <SectionLabel>[SIGNAL_ANALYSIS]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
                 Strengths & Weaknesses
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-terminal-border border border-terminal-border">
                 <div className="bg-electromagnetic-ink p-5">
-                  <p className="font-mono text-[10px] text-electric-teal uppercase mb-4">
-                    {'// Strengths'}
-                  </p>
+                  <p className="font-mono text-[10px] text-electric-teal uppercase mb-4">{'// Strengths'}</p>
                   <div className="flex flex-col gap-3">
                     {model.strengths.map((s, i) => (
                       <div key={i} className="flex items-start gap-2">
@@ -287,9 +491,7 @@ export default async function ModelPage({ params }: Props) {
                   </div>
                 </div>
                 <div className="bg-surface-container-lowest p-5">
-                  <p className="font-mono text-[10px] text-signal-orange uppercase mb-4">
-                    {'// Weaknesses'}
-                  </p>
+                  <p className="font-mono text-[10px] text-signal-orange uppercase mb-4">{'// Weaknesses'}</p>
                   <div className="flex flex-col gap-3">
                     {model.weaknesses.map((w, i) => (
                       <div key={i} className="flex items-start gap-2">
@@ -304,18 +506,46 @@ export default async function ModelPage({ params }: Props) {
           )}
 
           {/* Pricing */}
-          {(model.pricing_model || model.pricing_summary) && (
-            <section className="px-4 py-12 border-b border-terminal-border">
+          {(model.pricing_model || model.pricing_summary || model.pricing_tier_label) && (
+            <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
               <SectionLabel>[PRICING_PROTOCOL]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">Pricing</h2>
               <div className="border border-terminal-border p-5">
-                {model.pricing_model && (
-                  <div className="mb-4">
-                    <span className="font-mono text-[10px] border px-2 py-0.5 uppercase border-primary/40 text-primary">
-                      {model.pricing_model.toUpperCase()}
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  {model.pricing_tier_label && (
+                    <span className={`font-mono text-[10px] border px-2 py-0.5 uppercase ${tierCls}`}>
+                      {model.pricing_tier_label}
                     </span>
+                  )}
+                  {model.has_free_tier && (
+                    <span className="font-mono text-[10px] border border-primary/40 text-primary px-2 py-0.5 uppercase">
+                      Free Tier Available
+                    </span>
+                  )}
+                  {model.pricing_model && (
+                    <span className="font-mono text-[10px] border border-terminal-border text-data-dim px-2 py-0.5 uppercase">
+                      {model.pricing_model}
+                    </span>
+                  )}
+                </div>
+
+                {(model.api_input_price_usd_per_1m || model.api_output_price_usd_per_1m) && (
+                  <div className="grid grid-cols-2 gap-px bg-terminal-border border border-terminal-border mb-4">
+                    {model.api_input_price_usd_per_1m != null && (
+                      <div className="bg-electromagnetic-ink p-3">
+                        <p className="font-mono text-[8px] text-data-dim uppercase mb-1">INPUT / 1M TOKENS</p>
+                        <p className="font-mono text-[15px] text-on-surface">${model.api_input_price_usd_per_1m.toFixed(2)}</p>
+                      </div>
+                    )}
+                    {model.api_output_price_usd_per_1m != null && (
+                      <div className="bg-electromagnetic-ink p-3">
+                        <p className="font-mono text-[8px] text-data-dim uppercase mb-1">OUTPUT / 1M TOKENS</p>
+                        <p className="font-mono text-[15px] text-on-surface">${model.api_output_price_usd_per_1m.toFixed(2)}</p>
+                      </div>
+                    )}
                   </div>
                 )}
+
                 {model.pricing_summary && (
                   <p className="font-body text-body-sm text-on-surface-variant mb-4">
                     {model.pricing_summary}
@@ -326,9 +556,9 @@ export default async function ModelPage({ params }: Props) {
                     VERIFIED: {formatDate(model.pricing_last_verified)}
                   </p>
                 )}
-                {model.official_source_url && (
+                {(model.pricing_url || model.official_source_url) && (
                   <a
-                    href={model.official_source_url}
+                    href={model.pricing_url ?? model.official_source_url ?? '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 font-mono text-[10px] text-primary uppercase mt-4 hover:underline"
@@ -338,10 +568,48 @@ export default async function ModelPage({ params }: Props) {
                   </a>
                 )}
               </div>
+
+              {/* Budget alternative card */}
+              {model.similar_cheaper_model && (
+                <div className="mt-4 border border-terminal-border p-4 flex items-center gap-4">
+                  <span className="material-symbols-outlined text-data-dim text-xl">savings</span>
+                  <div>
+                    <p className="font-mono text-[9px] text-data-dim uppercase mb-1">BUDGET_ALTERNATIVE</p>
+                    <p className="font-body text-body-sm text-on-surface-variant">
+                      Consider <strong className="text-on-surface">{model.similar_cheaper_model}</strong> for a lower-cost option with similar capabilities.
+                    </p>
+                  </div>
+                </div>
+              )}
             </section>
           )}
 
-          {/* Compared With Similar Models */}
+          {/* Integrations */}
+          {integrations.length > 0 && (
+            <section className="px-4 py-12 border-b border-terminal-border">
+              <SectionLabel>[INTEGRATIONS]</SectionLabel>
+              <h2 className="font-headline text-headline-md text-on-surface uppercase mb-6">
+                Known Integrations
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {integrations.slice(0, 12).map((name) => (
+                  <span
+                    key={name}
+                    className="font-mono text-[9px] text-on-surface-variant uppercase border border-terminal-border px-2 py-1"
+                  >
+                    {name}
+                  </span>
+                ))}
+                {integrations.length > 12 && (
+                  <span className="font-mono text-[9px] text-data-dim uppercase border border-terminal-border px-2 py-1">
+                    +{integrations.length - 12} more
+                  </span>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Related models */}
           {relatedModels.length > 0 && (
             <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
               <SectionLabel>[SIMILAR_MODELS]</SectionLabel>
@@ -386,6 +654,7 @@ export default async function ModelPage({ params }: Props) {
               <div className="flex flex-col gap-3">
                 {model.example_prompts.map((prompt, i) => (
                   <div key={i} className="relative border border-terminal-border bg-surface-container-lowest p-4 group">
+                    <p className="font-mono text-[8px] text-data-dim uppercase mb-2">PROMPT_{String(i + 1).padStart(2, '0')}</p>
                     <p className="font-mono text-[11px] text-on-surface-variant pr-8">{prompt}</p>
                     <CopyButton text={prompt} />
                   </div>
@@ -394,16 +663,30 @@ export default async function ModelPage({ params }: Props) {
             </section>
           )}
 
-          {/* Safety Notes */}
-          {model.safety_notes && (
+          {/* Safety & Compliance */}
+          {(model.safety_notes || model.safety_features) && (
             <section className="px-4 py-12 border-b border-terminal-border bg-surface-container-lowest">
               <SectionLabel>[SAFETY_PROTOCOL]</SectionLabel>
               <h2 className="font-headline text-headline-md text-on-surface uppercase mb-4">
-                Safety & Alignment
+                Safety & Compliance
               </h2>
-              <div className="border-l-2 border-electric-teal pl-4">
-                <p className="font-body text-body-sm text-on-surface-variant">{model.safety_notes}</p>
-              </div>
+              {model.safety_features && (
+                <div className="border-l-2 border-electric-teal pl-4 mb-4">
+                  <p className="font-mono text-[9px] text-primary uppercase mb-1">SAFETY_FEATURES</p>
+                  <p className="font-body text-body-sm text-on-surface-variant">{model.safety_features}</p>
+                </div>
+              )}
+              {model.safety_notes && model.safety_notes !== model.safety_features && (
+                <div className="border-l-2 border-terminal-border pl-4">
+                  <p className="font-body text-body-sm text-on-surface-variant">{model.safety_notes}</p>
+                </div>
+              )}
+              {model.enterprise_ready && (
+                <div className="mt-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-base">verified</span>
+                  <span className="font-mono text-[10px] text-on-surface uppercase">Enterprise Ready</span>
+                </div>
+              )}
             </section>
           )}
 
