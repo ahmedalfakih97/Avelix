@@ -52,7 +52,7 @@ export default async function SearchPage({
     terms,
   ] = await Promise.all([
     show('tools')    ? getTools({ search: q, sort: 'relevant', page: 1 }) : Promise.resolve({ tools: [], total: 0 }),
-    show('models')   ? getModels({ search: q, sort: 'popular',  page: 1 }) : Promise.resolve({ models: [], total: 0 }),
+    show('models')   ? getModels({ search: q, sort: 'trending', page: 1 }) : Promise.resolve({ models: [], total: 0 }),
     show('skills')   ? getSkills({ search: q, sort: 'popular',  page: 1 }) : Promise.resolve({ skills: [], total: 0 }),
     show('glossary') ? getAllGlossaryTerms({ search: q }) : Promise.resolve([]),
   ])
@@ -135,7 +135,7 @@ export default async function SearchPage({
               {show('tools') && tools.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="font-mono text-[10px] text-primary uppercase">// Tools ({toolTotal})</span>
+                    <span className="font-mono text-[10px] text-primary uppercase">{`// Tools (${toolTotal})`}</span>
                     <Link href={`/tools?search=${encodeURIComponent(q)}`} className="font-mono text-[9px] text-data-dim uppercase hover:text-primary transition-colors">
                       See all →
                     </Link>
@@ -152,7 +152,7 @@ export default async function SearchPage({
               {show('models') && models.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="font-mono text-[10px] text-primary uppercase">// Models ({modelTotal})</span>
+                    <span className="font-mono text-[10px] text-primary uppercase">{`// Models (${modelTotal})`}</span>
                     <Link href={`/models?search=${encodeURIComponent(q)}`} className="font-mono text-[9px] text-data-dim uppercase hover:text-primary transition-colors">
                       See all →
                     </Link>
@@ -169,7 +169,7 @@ export default async function SearchPage({
               {show('skills') && skills.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="font-mono text-[10px] text-primary uppercase">// Skills ({skillTotal})</span>
+                    <span className="font-mono text-[10px] text-primary uppercase">{`// Skills (${skillTotal})`}</span>
                     <Link href={`/skills?search=${encodeURIComponent(q)}`} className="font-mono text-[9px] text-data-dim uppercase hover:text-primary transition-colors">
                       See all →
                     </Link>
@@ -186,7 +186,7 @@ export default async function SearchPage({
               {show('glossary') && terms.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="font-mono text-[10px] text-primary uppercase">// Glossary ({terms.length})</span>
+                    <span className="font-mono text-[10px] text-primary uppercase">{`// Glossary (${terms.length})`}</span>
                     <Link href="/glossary" className="font-mono text-[9px] text-data-dim uppercase hover:text-primary transition-colors">
                       Browse glossary →
                     </Link>
